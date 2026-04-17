@@ -1,55 +1,54 @@
 #!/bin/bash
 #
-# Minimal Ralph-like optimization runner for repeated Claude Code iterations.
-# Usage: ./scripts/research-bot/optimize.sh [max_iterations]
+# Minimal Ralph-like implementation runner for repeated Claude Code iterations.
+# Usage: ./scripts/research-bot/implement.sh [max_iterations]
 
 set -e
 
 MAX_ITERATIONS="${1:-10}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PROMPT_FILE="$ROOT_DIR/optimization/CLAUDE.md"
-PRD_FILE="$ROOT_DIR/optimization/prd.json"
-PROGRESS_FILE="$ROOT_DIR/optimization/progress.md"
+PROMPT_FILE="$ROOT_DIR/research/implementation/CLAUDE.md"
+TASKS_FILE="$ROOT_DIR/research/implementation/tasks.json"
+PROGRESS_FILE="$ROOT_DIR/research/implementation/progress.md"
 
 if [ ! -f "$PROMPT_FILE" ]; then
   echo "Missing $PROMPT_FILE"
-  echo "Initialize optimization artifacts with the research-optimize skill first."
+  echo "Initialize implementation artifacts with the research-implement skill first."
   exit 1
 fi
 
-if [ ! -f "$PRD_FILE" ]; then
-  echo "Missing $PRD_FILE"
-  echo "Initialize optimization artifacts with the research-optimize skill first."
+if [ ! -f "$TASKS_FILE" ]; then
+  echo "Missing $TASKS_FILE"
+  echo "Initialize implementation artifacts with the research-implement skill first."
   exit 1
 fi
 
-mkdir -p "$ROOT_DIR/optimization"
+mkdir -p "$ROOT_DIR/research/implementation"
 
 if [ ! -f "$PROGRESS_FILE" ]; then
-  echo "# Optimization Progress Log" > "$PROGRESS_FILE"
+  echo "# Implementation Progress Log" > "$PROGRESS_FILE"
   echo "Started: $(date)" >> "$PROGRESS_FILE"
   echo "---" >> "$PROGRESS_FILE"
 fi
 
-echo "Starting research optimization loop for $MAX_ITERATIONS iterations"
+echo "Starting research implementation loop for $MAX_ITERATIONS iterations"
 
 for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo ""
   echo "==============================================================="
-  echo "  Optimization Iteration $i of $MAX_ITERATIONS"
+  echo "  Implementation Iteration $i of $MAX_ITERATIONS"
   echo "==============================================================="
 
   OUTPUT=$(claude --dangerously-skip-permissions --print < "$PROMPT_FILE" 2>&1 | tee /dev/stderr) || true
 
-  if echo "$OUTPUT" | grep -q "<promise>OPTIMIZATION_COMPLETE</promise>"; then
+  if echo "$OUTPUT" | grep -q "<promise>IMPLEMENTATION_COMPLETE</promise>"; then
     echo ""
-    echo "Optimization objective reached."
+    echo "Implementation objective reached."
     exit 0
   fi
 
-  if [ -f "$PRD_FILE" ]; then
-    STATUS=$(python3 - <<'PY' "$PRD_FILE"
+  STATUS=$(python3 - <<'PY' "$TASKS_FILE"
 import json, sys
 path = sys.argv[1]
 try:
@@ -62,11 +61,10 @@ except Exception:
     print("")
 PY
 )
-    if [ "$STATUS" = "completed" ]; then
-      echo ""
-      echo "Optimization loop stopped because all optimization tasks are complete."
-      exit 0
-    fi
+  if [ "$STATUS" = "completed" ]; then
+    echo ""
+    echo "Implementation loop stopped because all implementation tasks are complete."
+    exit 0
   fi
 
   echo "Iteration $i complete. Continuing..."

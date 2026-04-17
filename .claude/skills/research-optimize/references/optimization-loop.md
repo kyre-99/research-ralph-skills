@@ -4,37 +4,38 @@ The optimization loop should be durable, inspectable, and resumable with as few 
 
 ## Core Files
 
-### `optimization/OBJECTIVE.md`
+### `optimization/prd.json`
 
-Human-readable contract for the loop.
+Machine-readable optimization contract and task backlog.
 
-Recommended sections:
+Recommended top-level fields:
 
-- Objective
-- Primary metric
-- Target
-- Baseline
-- Constraints
-- Allowed modifications
-- Stop conditions
+- `objective`
+- `primary_metric`
+- `stop_condition`
+- `baseline`
+- `tasks`
 
-### `optimization/QUEUE.md`
+Each task should contain:
 
-Prioritized experiment/change backlog.
+- `id`
+- `title`
+- `type`
+- `description`
+- `acceptanceCriteria`
+- `priority`
+- `status`
+- `notes`
 
-Recommended sections:
+Recommended task types:
 
-- Active
-- Pending
-- Accepted
-- Rejected
-- Blocked
+- `instrumentation`
+- `experiment`
+- `implementation`
+- `analysis`
+- `decision`
 
-### `optimization/STATE.json`
-
-Latest machine-readable snapshot.
-
-### `optimization/PROGRESS.md`
+### `optimization/progress.md`
 
 Append-only narrative and evidence log.
 
@@ -42,10 +43,12 @@ Append-only narrative and evidence log.
 
 - One iteration should focus on one bounded improvement attempt.
 - Memory should live in files, not only in the chat.
-- A fresh session should be able to continue from `STATE.json` plus the latest section of `PROGRESS.md`.
-- Preserve accepted and rejected ideas to avoid repeated work.
-- Keep the runner prompt aligned with the latest objective and queue.
+- A fresh session should be able to continue from `prd.json` plus the latest section of `progress.md`.
+- Preserve accepted and rejected ideas as task notes instead of losing them.
+- Keep the runner prompt aligned with the latest task decomposition.
 - When the objective is replaced rather than refined, archive the current run before resetting optimization files.
+- Separate run preparation from run execution: the skill prepares files, the shell runner executes repeated fresh iterations.
+- Derive the task list from the research plan and current runnable implementation, then shrink it into single-iteration tasks.
 
 ## Objective Change Rule
 

@@ -22,33 +22,22 @@ write_if_missing() {
   fi
 }
 
-write_if_missing "$ROOT_DIR/research/brief.md" "# Research Brief
+write_if_missing "$ROOT_DIR/research/plan.md" "# Research Plan
 
 ## Objective
 - 
 
-## Problem Context
+## Problem Definition
 - 
-
-## Assumptions
-- 
-
-## Hypotheses
-1. 
-
-## Constraints
-- 
-
-## Success Criteria
-- "
-
-write_if_missing "$ROOT_DIR/research/plan.md" "# Research Plan
 
 ## Thesis
 - 
 
 ## Milestones
 1. 
+
+## Baseline
+- 
 
 ## Validation Plan
 - 
@@ -59,112 +48,102 @@ write_if_missing "$ROOT_DIR/research/plan.md" "# Research Plan
 ## Non-Goals
 - 
 
-## Next Action
+## Implementation Handoff
+- 
+
+## Optimization Handoff
 - "
 
-write_if_missing "$ROOT_DIR/research/plan-progress.md" "# Planning Progress
+write_if_missing "$ROOT_DIR/research/plan-history.md" "# Planning History
 
 ## $(date '+%Y-%m-%d %H:%M:%S')
 - Initialized planning artifacts
-- Next action: fill in \`research/brief.md\` and \`research/plan.md\`
+- Previous assumptions:
+- New assumptions:
+- Next action: fill in \`research/plan.md\`
 "
 
-write_if_missing "$ROOT_DIR/research/plan-state.json" '{
-  "topic": "",
-  "status": "draft",
-  "current_phase": "planning",
-  "recommended_next_skill": "research-implement",
-  "primary_metric": "",
-  "artifacts": {
-    "brief": "research/brief.md",
-    "plan": "research/plan.md",
-    "progress": "research/plan-progress.md"
-  },
-  "updated_at": ""
+write_if_missing "$ROOT_DIR/research/implementation/tasks.json" '{
+  "objective": "Implement the current research plan",
+  "source_plan": "research/plan.md",
+  "tasks": [
+    {
+      "id": "IMP-001",
+      "title": "",
+      "description": "",
+      "acceptanceCriteria": [],
+      "priority": 1,
+      "status": "pending",
+      "notes": ""
+    }
+  ]
 }'
 
-write_if_missing "$ROOT_DIR/research/implementation/IMPLEMENTATION.md" "# Implementation
-
-## Target Milestone
-- 
-
-## Scope
-- 
-
-## Baseline Behavior
-- 
-
-## Validation Command
-- 
-
-## Expected Output Artifacts
-- 
-
-## Next Action
-- "
-
-write_if_missing "$ROOT_DIR/research/implementation/IMPLEMENTATION_LOG.md" "# Implementation Log
+write_if_missing "$ROOT_DIR/research/implementation/progress.md" "# Implementation Progress
 
 ## $(date '+%Y-%m-%d %H:%M:%S')
 - Initialized implementation artifacts
-- Next action: define the first implementation slice
+- Next action: define the first implementation task
 "
 
-write_if_missing "$ROOT_DIR/research/implementation/IMPLEMENTATION_STATE.json" '{
-  "status": "in_progress",
-  "current_milestone": "",
-  "baseline": "",
+write_if_missing "$ROOT_DIR/research/implementation/CLAUDE.md" "# Research Implementer Iteration Instructions
+
+You are one fresh implementation iteration in a Ralph-like loop.
+
+## Read First
+
+1. \`research/plan.md\`
+2. \`research/implementation/tasks.json\`
+3. \`research/implementation/progress.md\`
+
+## Your Task
+
+1. Pick the highest-priority task in \`research/implementation/tasks.json\` where \`status\` is not complete.
+2. Implement only one bounded implementation slice.
+3. Run the relevant verification.
+4. Update:
+   - \`research/implementation/progress.md\`
+   - \`research/implementation/tasks.json\`
+5. Preserve important implementation decisions in \`research/implementation/tasks.json\`.
+
+## Important
+
+- Work on exactly one implementation item per iteration.
+- Treat this as a fresh invocation with no hidden memory beyond the files above.
+- If the current task is too large for one bounded pass, split it in \`research/implementation/tasks.json\` and complete only the first smaller slice.
+- Record reusable learnings in \`research/implementation/progress.md\` so the next iteration can continue cleanly.
+- If conversational context is missing or stale, trust the files above and continue from them.
+
+## Stop Condition
+
+If all relevant tasks are complete, update \`research/implementation/tasks.json\` and reply with:
+
+\`<promise>IMPLEMENTATION_COMPLETE</promise>\`
+"
+
+write_if_missing "$ROOT_DIR/optimization/prd.json" '{
+  "objective": "",
   "primary_metric": "",
-  "last_validation": "",
-  "ready_for_optimization": false,
-  "updated_at": ""
+  "stop_condition": "",
+  "baseline": {
+    "metric": null,
+    "run_id": ""
+  },
+  "tasks": [
+    {
+      "id": "OPT-001",
+      "title": "",
+      "type": "instrumentation",
+      "description": "",
+      "acceptanceCriteria": [],
+      "priority": 1,
+      "status": "pending",
+      "notes": ""
+    }
+  ]
 }'
 
-write_if_missing "$ROOT_DIR/optimization/OBJECTIVE.md" "# Optimization Objective
-
-## Objective
-- 
-
-## Primary Metric
-- Metric:
-- Direction: higher-is-better / lower-is-better
-
-## Target
-- 
-
-## Baseline
-- Result:
-- Run id:
-
-## Constraints
-- Time budget:
-- Compute budget:
-- Quality constraints:
-
-## Allowed Search Space
-- 
-
-## Stop Conditions
-- "
-
-write_if_missing "$ROOT_DIR/optimization/QUEUE.md" "# Optimization Queue
-
-## Active
-- 
-
-## Pending
-- 
-
-## Accepted
-- 
-
-## Rejected
-- 
-
-## Blocked
-- "
-
-write_if_missing "$ROOT_DIR/optimization/PROGRESS.md" "# Optimization Progress
+write_if_missing "$ROOT_DIR/optimization/progress.md" "# Optimization Progress
 
 ## $(date '+%Y-%m-%d %H:%M:%S') - Round 0
 - Hypothesis: initialization
@@ -175,46 +154,38 @@ write_if_missing "$ROOT_DIR/optimization/PROGRESS.md" "# Optimization Progress
 - Next action: define the first active optimization item
 ---"
 
-write_if_missing "$ROOT_DIR/optimization/STATE.json" '{
-  "status": "in_progress",
-  "round": 0,
-  "objective": "",
-  "primary_metric": "",
-  "baseline_metric": null,
-  "best_metric": null,
-  "best_run_id": "",
-  "active_task": "",
-  "stop_reason": "",
-  "updated_at": ""
-}'
+write_if_missing "$ROOT_DIR/optimization/CLAUDE.md" "# Research Optimizer Iteration Instructions
 
-write_if_missing "$ROOT_DIR/optimization/CLAUDE.md" "# Research Optimizer Instructions
-
-You are running one iteration of the project optimization loop.
+You are one fresh optimization iteration in a Ralph-like loop.
 
 ## Read First
 
-1. \`optimization/OBJECTIVE.md\`
-2. \`optimization/QUEUE.md\`
-3. \`optimization/STATE.json\`
-4. \`optimization/PROGRESS.md\`
-5. \`research/brief.md\`
-6. \`research/implementation/IMPLEMENTATION_STATE.json\`
+1. \`optimization/prd.json\`
+2. \`optimization/progress.md\`
+3. \`research/plan.md\`
+4. \`research/implementation/tasks.json\`
+5. \`research/implementation/progress.md\`
 
 ## Your Task
 
-1. Pick the active or highest-priority pending optimization item.
+1. Pick the highest-priority task in \`optimization/prd.json\` where \`status\` is not complete.
 2. Implement only one bounded improvement attempt.
 3. Run the relevant evaluation.
 4. Update:
-   - \`optimization/PROGRESS.md\`
-   - \`optimization/STATE.json\`
-   - \`optimization/QUEUE.md\`
-5. Preserve the known-best configuration and metric.
+   - \`optimization/progress.md\`
+   - \`optimization/prd.json\`
+5. Preserve the known-best configuration and important decision notes in \`optimization/prd.json\`.
+
+## Important
+
+- Work on exactly one optimization item per iteration.
+- Treat this as a fresh invocation with no hidden memory beyond the files above.
+- If the current task is too large for one bounded pass, split it in \`optimization/prd.json\` and complete only the first smaller slice.
+- Record reusable learnings in \`optimization/progress.md\` so the next iteration can continue cleanly.
 
 ## Stop Condition
 
-If the objective target is reached, or the stopping rule says to stop, write that decision to \`optimization/STATE.json\` and reply with:
+If all relevant tasks are complete, or the stop condition in \`optimization/prd.json\` says to stop, update \`optimization/prd.json\` and reply with:
 
 \`<promise>OPTIMIZATION_COMPLETE</promise>\`
 "
@@ -223,26 +194,25 @@ write_if_missing "$ROOT_DIR/runtime/RESEARCH_STATE.json" '{
   "active_phase": "planning",
   "recommended_next_skill": "research-plan",
   "canonical_files": {
-    "brief": "research/brief.md",
     "plan": "research/plan.md",
-    "plan_state": "research/plan-state.json",
-    "implementation_state": "research/implementation/IMPLEMENTATION_STATE.json",
-    "optimization_state": "optimization/STATE.json"
+    "plan_history": "research/plan-history.md",
+    "implementation_tasks": "research/implementation/tasks.json",
+    "optimization_prd": "optimization/prd.json"
   },
   "updated_at": ""
 }'
 
 write_if_missing "$ROOT_DIR/runtime/MANIFEST.md" "# Runtime Manifest
 
-- \`research/brief.md\`: current research brief
 - \`research/plan.md\`: current research plan
-- \`research/plan-state.json\`: planning state
-- \`research/implementation/IMPLEMENTATION.md\`: current implementation slice
-- \`research/implementation/IMPLEMENTATION_STATE.json\`: implementation state
-- \`optimization/OBJECTIVE.md\`: optimization contract
-- \`optimization/QUEUE.md\`: optimization backlog
-- \`optimization/STATE.json\`: optimization state
+- \`research/plan-history.md\`: planning history
+- \`research/implementation/tasks.json\`: implementation task decomposition
+- \`research/implementation/progress.md\`: implementation log
+- \`research/implementation/CLAUDE.md\`: single-iteration implementation prompt
+- \`optimization/prd.json\`: optimization task decomposition and objective
+- \`optimization/progress.md\`: optimization log
+- \`optimization/CLAUDE.md\`: single-iteration optimization prompt
 "
 
 echo "Research bot artifacts initialized."
-echo "Start with research/brief.md and research/plan.md, or invoke the research-plan skill."
+echo "Start with research/plan.md, or invoke the research-plan skill."

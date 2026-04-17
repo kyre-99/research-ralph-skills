@@ -1,7 +1,8 @@
 ---
 name: research-implement
-description: Implement a persisted research brief in code and maintain a minimal set of durable implementation artifacts for later review and optimization. Use when the user already has a research direction and wants runnable code, experiment scaffolding, baselines, evaluation scripts, or a first executable prototype. Triggers on: implement this research plan, build the experiment, create the baseline, turn the brief into code, scaffold the project for this idea.
+description: Implement a persisted research plan in code and maintain a Ralph-like task list plus progress log for implementation. Use when the user already has a research direction and wants runnable code, experiment scaffolding, baselines, evaluation scripts, or a first executable prototype. Triggers on: implement this research plan, build the experiment, create the baseline, turn the plan into code, scaffold the project for this idea.
 argument-hint: [brief, plan, or implementation goal]
+disable-model-invocation: true
 user-invocable: true
 ---
 
@@ -9,78 +10,126 @@ user-invocable: true
 
 Implement the research task for: $ARGUMENTS
 
-Read `research/brief.md`, `research/plan.md`, and any existing implementation artifacts before making changes.
+Read `research/plan.md` and any existing implementation artifacts before making changes.
+
+If this is a fresh session with little or no context, start by reading in this order:
+
+1. `runtime/RESEARCH_STATE.json` if it exists
+2. `research/plan.md`
+3. `research/implementation/tasks.json` if it exists
+4. `research/implementation/progress.md` if it exists
 
 ## Required Artifacts
 
 Maintain these files under `research/implementation/`:
 
-- `IMPLEMENTATION.md`
-- `IMPLEMENTATION_STATE.json`
-- `IMPLEMENTATION_LOG.md`
+- `tasks.json`
+- `progress.md`
+- `CLAUDE.md`
 
-Use `${CLAUDE_SKILL_DIR}/assets/implementation-state.template.json` when initializing state.
+## Primary Responsibility
 
-## Workflow
+This skill prepares the implementation run. It does not execute the full implementation loop itself.
 
-1. Read planning artifacts first and extract the smallest useful implementation slice.
-2. Record the intended slice in `IMPLEMENTATION.md`.
-3. Implement incrementally:
-   - core method,
-   - baseline or comparison path,
-   - reproducible entrypoint,
-   - evaluation hook.
-4. Run the lightest meaningful verification.
-5. Update implementation state and append a log entry.
+Its job is to:
 
-## `IMPLEMENTATION.md`
+- derive implementation tasks from `research/plan.md`,
+- refresh `research/implementation/tasks.json`,
+- refresh `research/implementation/progress.md` when the plan changes,
+- refresh `research/implementation/CLAUDE.md`,
+- leave the repository ready for `./scripts/research-bot/implement.sh`.
 
-Capture:
+Unless the user explicitly asks for a one-off implementation pass in the current session, do not execute queued implementation work directly in this skill.
 
-- target milestone,
-- files or modules expected to change,
-- baseline behavior,
-- validation command,
-- expected output artifacts,
-- next action.
+## Default Behavior
 
-## `IMPLEMENTATION_STATE.json`
+By default, stop after preparing or refreshing:
 
-Track at least:
+- `research/implementation/tasks.json`
+- `research/implementation/progress.md`
+- `research/implementation/CLAUDE.md`
+
+Then recommend the shell runner:
+
+```bash
+./scripts/research-bot/implement.sh 10
+```
+
+Do not start implementing queued tasks in this skill unless the user explicitly asks for an immediate one-off implementation pass.
+
+## Setup Protocol
+
+1. Read `research/plan.md`.
+2. Read `research/implementation/tasks.json` and `research/implementation/progress.md` if they exist.
+3. Convert the current implementation handoff into bounded implementation tasks in `research/implementation/tasks.json`.
+4. Refresh `research/implementation/CLAUDE.md` so it matches the current task list and progress log.
+5. Leave the repository ready for `./scripts/research-bot/implement.sh`.
+6. End by explicitly recommending `./scripts/research-bot/implement.sh <N>` as the next step.
+
+## `tasks.json`
+
+It must contain:
+
+- the implementation objective,
+- a reference to `research/plan.md`,
+- a list of bounded implementation tasks.
+
+Recommended shape:
 
 ```json
 {
-  "status": "in_progress",
-  "current_milestone": "",
-  "baseline": "",
-  "primary_metric": "",
-  "last_validation": "",
-  "ready_for_optimization": false,
-  "updated_at": ""
+  "objective": "Implement the current research plan",
+  "source_plan": "research/plan.md",
+  "tasks": [
+    {
+      "id": "IMP-001",
+      "title": "",
+      "description": "",
+      "acceptanceCriteria": [],
+      "priority": 1,
+      "status": "pending",
+      "notes": ""
+    }
+  ]
 }
 ```
 
-## `IMPLEMENTATION_LOG.md`
+Task design rules:
+
+- Every task must be small enough to complete in one implementation pass.
+- Every task must have verifiable acceptance criteria.
+- Split large build steps into multiple tasks before starting work.
+- Use `status` to encode progress: `pending`, `in_progress`, `complete`, or `blocked`.
+
+## `progress.md`
 
 Append-only log with:
 
 - timestamp,
+- task id,
 - change made,
 - files touched,
 - validation result,
 - reusable learnings,
 - next action.
 
+## `CLAUDE.md`
+
+This file must be a single-iteration instruction file for a fresh Claude invocation, similar to Ralph's `CLAUDE.md`.
+
 ## Rules
 
 - Prefer simple, inspectable baselines before complexity.
 - Make seeds, hyperparameters, and paths configurable.
 - Save outputs in machine-readable formats when possible.
-- If validation cannot run, state exactly why in `IMPLEMENTATION_LOG.md`.
-- Mark `ready_for_optimization` true only when there is a runnable baseline and a measurable metric.
+- If validation cannot run, state exactly why in `progress.md`.
+- When the baseline becomes runnable, mark the relevant task complete and record the validation result in both `tasks.json` notes and `progress.md`.
+- If session context is thin, trust the files rather than conversational memory.
 
 ## Boundaries
 
 - Do not claim gains that are not measured.
 - Do not erase prior implementation history.
-- Hand off to `/research-optimize` only after the implementation artifacts are current.
+- Hand off to `/research-optimize` only after `tasks.json` reflects the current implementation status.
+- Do not silently run the full implementation loop in the current skill invocation when the user's intent is to prepare a reusable Ralph-like run.
+- Prefer the shell runner over ad-hoc in-session implementation once the task list has been prepared.

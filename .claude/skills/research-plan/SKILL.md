@@ -1,6 +1,6 @@
 ---
 name: research-plan
-description: Discuss a research problem with the user, clarify the scope, and persist the outcome as reusable planning artifacts for later implementation and optimization. Use when the user wants to shape an idea, refine a research question, compare directions, define milestones, or produce a durable research brief. Triggers on: research plan, refine this idea, discuss a paper idea, build a research brief, turn this into a project plan, define the research scope.
+description: Discuss a research problem with the user, clarify the scope, and persist the outcome as a durable research plan plus a planning history log. Use when the user wants to shape an idea, refine a research question, compare directions, define milestones, or produce a reusable plan for implementation and optimization. Triggers on: research plan, refine this idea, discuss a paper idea, build a research plan, turn this into a project plan, define the research scope.
 argument-hint: [research topic or problem]
 user-invocable: true
 ---
@@ -13,79 +13,67 @@ Read `${CLAUDE_SKILL_DIR}/references/planning-artifacts.md` before updating the 
 
 ## Purpose
 
+Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
+
+Ask the questions one at a time.
+
+If a question can be answered by exploring the codebase, explore the codebase instead.
 This skill is not a one-off brainstorm. It creates the smallest planning artifact set that the next session can read directly without repeating the same discussion.
 
 ## Required Artifacts
 
 Maintain only these files under `research/`:
 
-- `research/brief.md` — current high-level brief
-- `research/plan.md` — actionable milestone plan
-- `research/plan-state.json` — machine-readable planning state
-- `research/plan-progress.md` — append-only planning log
-
-Use `${CLAUDE_SKILL_DIR}/assets/plan-state.template.json` when initializing `research/plan-state.json`.
+- `research/plan.md` — current plan and handoff document
+- `research/plan-history.md` — append-only history of planning revisions
 
 ## Workflow
 
 1. Read any existing planning artifacts first.
-2. Compare the current user request against the existing brief:
-   - If aligned, refine the existing files.
-   - If materially different, update the brief and record the scope change in `plan-progress.md`.
+2. Compare the current user request against the existing plan:
+   - If aligned, refine the existing plan.
+   - If materially different, update the plan and record the scope change in `plan-history.md`.
 3. Ask only the minimum clarifying questions needed to remove dangerous ambiguity.
 4. Write or update:
+   - the objective,
    - the problem definition,
-   - the main hypotheses,
-   - scope boundaries,
+   - the thesis,
    - milestones,
-   - evaluation criteria,
-   - the recommended next step.
-5. Append a planning entry to `research/plan-progress.md`.
+   - baseline definition,
+   - evaluation plan,
+   - risks,
+   - non-goals,
+   - implementation handoff,
+   - optimization handoff.
+5. Append a planning entry to `research/plan-history.md`.
 
 ## Output Contract
-
-### `research/brief.md`
-
-Must contain:
-
-- title,
-- objective,
-- problem context,
-- assumptions,
-- hypotheses,
-- constraints,
-- success criteria.
 
 ### `research/plan.md`
 
 Must contain:
 
-- milestone list,
-- expected deliverables per milestone,
-- validation plan,
-- major risks and mitigations,
-- explicit non-goals,
-- exact next action.
+- objective,
+- problem definition,
+- thesis,
+- milestones,
+- baseline definition,
+- evaluation plan,
+- risks,
+- non-goals,
+- implementation handoff,
+- optimization handoff.
 
-### `research/plan-state.json`
+### `research/plan-history.md`
 
-Must track at least:
+Each append should include:
 
-```json
-{
-  "topic": "",
-  "status": "draft",
-  "current_phase": "planning",
-  "recommended_next_skill": "research-implement",
-  "primary_metric": "",
-  "artifacts": {
-    "brief": "research/brief.md",
-    "plan": "research/plan.md",
-    "progress": "research/plan-progress.md"
-  },
-  "updated_at": ""
-}
-```
+- timestamp,
+- what changed,
+- why it changed,
+- previous assumptions,
+- new assumptions,
+- next action.
 
 ## Planning Rules
 
@@ -93,7 +81,8 @@ Must track at least:
 - Make hypotheses falsifiable.
 - Include default metrics if the user did not specify any.
 - Treat literature validation as a follow-up task unless it is the immediate focus.
-- The plan should be ready for `/research-implement` without re-planning from scratch.
+- The plan should be ready for `/research-implement` and `/research-optimize` without re-planning from scratch.
+- Use `Implementation Handoff` and `Optimization Handoff` to make downstream consumption explicit.
 
 ## Boundaries
 

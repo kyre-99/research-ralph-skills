@@ -4,38 +4,24 @@ Planning is durable only if a later session can reconstruct intent from a very s
 
 ## File Roles
 
-### `research/brief.md`
-
-Current source of truth for the research direction.
-
-Keep it stable and concise. When the direction changes, rewrite this file and log the change in `plan-progress.md`.
-
 ### `research/plan.md`
 
-Operational plan derived from the brief.
+Current source of truth for the research direction and downstream handoff.
 
 Recommended sections:
 
 - Objective
-- Research thesis
+- Problem Definition
+- Thesis
 - Milestones
+- Baseline
 - Validation plan
 - Risks
 - Non-goals
-- Next action
+- Implementation Handoff
+- Optimization Handoff
 
-### `research/plan-state.json`
-
-Machine-readable snapshot for automation and routing.
-
-Recommended statuses:
-
-- `draft`
-- `approved`
-- `blocked`
-- `superseded`
-
-### `research/plan-progress.md`
+### `research/plan-history.md`
 
 Append-only planning diary.
 
@@ -44,5 +30,6 @@ Each entry should include:
 - timestamp,
 - what changed,
 - why it changed,
-- unresolved questions,
+- previous assumptions,
+- new assumptions,
 - next action.

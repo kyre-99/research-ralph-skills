@@ -17,11 +17,10 @@ Recommended structure:
   "active_phase": "planning",
   "recommended_next_skill": "research-plan",
   "canonical_files": {
-    "brief": "research/brief.md",
     "plan": "research/plan.md",
-    "plan_state": "research/plan-state.json",
-    "implementation_state": "research/implementation/IMPLEMENTATION_STATE.json",
-    "optimization_state": "optimization/STATE.json"
+    "plan_history": "research/plan-history.md",
+    "implementation_tasks": "research/implementation/tasks.json",
+    "optimization_prd": "optimization/prd.json"
   },
   "updated_at": ""
 }

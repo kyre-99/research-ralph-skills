@@ -8,9 +8,10 @@
 
 - `.claude/skills/` 里的项目级 skills
 - 工作区初始化脚本：`scripts/research-bot/init.sh`
+- 重复实现循环脚本：`scripts/research-bot/implement.sh`
 - 重复优化循环脚本：`scripts/research-bot/optimize.sh`
 - 归档脚本：`scripts/research-bot/archive-run.sh`
-- 一键全局安装 skills 的脚本：`scripts/research-bot/install-skills.sh`
+- 一键安装到项目 `.claude/skills` 的脚本：`scripts/research-bot/install-skills.sh`
 
 ## 怎么使用
 
@@ -20,20 +21,33 @@
 
 如果你就在这个仓库里工作，Claude Code 可以直接读取 `.claude/skills/`，不需要额外安装。
 
-### 方式 2：安装为全局 skills
+### 方式 2：安装到其他项目的 `.claude/skills`
 
-如果你想在别的仓库里也复用这些 skills：
+如果你想在别的仓库里复用这些 skills：
 
 ```bash
-./scripts/research-bot/install-skills.sh
+./scripts/research-bot/install-skills.sh /path/to/target-project
 ```
 
-它会把 skills 复制到 `~/.claude/skills`。
+它会把：
 
-也可以安装到自定义目录：
+- skills 复制到 `.claude/skills/`
+- 辅助脚本复制到 `scripts/research-bot/`
+
+也就是说，目标项目会同时拿到 skills 和 runner 脚本。
+
+具体是：
+
+```text
+/path/to/target-project/.claude/skills/
+/path/to/target-project/scripts/research-bot/
+```
+
+如果你当前就在目标项目目录里，也可以省略参数：
 
 ```bash
-./scripts/research-bot/install-skills.sh /path/to/skills
+cd /path/to/target-project
+/path/to/reasearch-bot/scripts/research-bot/install-skills.sh
 ```
 
 ## 整体流程
@@ -41,7 +55,7 @@
 推荐链路是：
 
 ```text
-init.sh -> /research-plan -> /research-implement -> /research-optimize -> optimize.sh
+init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-optimize -> optimize.sh
 ```
 
 进入优化阶段之后，大部分持续迭代都应该留在 `/research-optimize` 里完成。
@@ -52,23 +66,19 @@ init.sh -> /research-plan -> /research-implement -> /research-optimize -> optimi
 
 ### Planning
 
-- `research/brief.md`
 - `research/plan.md`
-- `research/plan-state.json`
-- `research/plan-progress.md`
+- `research/plan-history.md`
 
 ### Implementation
 
-- `research/implementation/IMPLEMENTATION.md`
-- `research/implementation/IMPLEMENTATION_STATE.json`
-- `research/implementation/IMPLEMENTATION_LOG.md`
+- `research/implementation/tasks.json`
+- `research/implementation/progress.md`
+- `research/implementation/CLAUDE.md`
 
 ### Optimization
 
-- `optimization/OBJECTIVE.md`
-- `optimization/QUEUE.md`
-- `optimization/STATE.json`
-- `optimization/PROGRESS.md`
+- `optimization/prd.json`
+- `optimization/progress.md`
 - `optimization/CLAUDE.md`
 
 ### Runtime
@@ -98,10 +108,8 @@ init.sh -> /research-plan -> /research-implement -> /research-optimize -> optimi
 
 它应该填写或更新：
 
-- `research/brief.md`
 - `research/plan.md`
-- `research/plan-state.json`
-- `research/plan-progress.md`
+- `research/plan-history.md`
 
 `research-plan` 主要用于最开始建题，或者当研究问题本身发生变化时重新收敛方向。
 
@@ -113,11 +121,41 @@ init.sh -> /research-plan -> /research-implement -> /research-optimize -> optimi
 
 它应该更新：
 
-- `research/implementation/IMPLEMENTATION.md`
-- `research/implementation/IMPLEMENTATION_STATE.json`
-- `research/implementation/IMPLEMENTATION_LOG.md`
+- `research/implementation/tasks.json`
+- `research/implementation/progress.md`
+- `research/implementation/CLAUDE.md`
 
-这里的目标不是无止境优化，而是先得到一个能跑、能测的 baseline。
+这里的目标是把当前计划拆成很多可逐步完成的实现任务，并把实现循环准备好。默认情况下，`/research-implement` 不应该在当前会话里把整轮实现自己跑掉。
+
+#### 然后运行实现循环
+
+```bash
+./scripts/research-bot/implement.sh 10
+```
+
+意思是：最多跑 10 轮实现。
+
+`implement.sh` 做的事情是：
+
+1. 读取 `research/implementation/CLAUDE.md`
+2. 把它交给 Claude Code
+3. 让 Claude 执行一轮有边界的实现
+4. 期待 Claude 更新 `tasks.json` 和 `progress.md`
+5. 持续重复，直到：
+   - Claude 返回 `<promise>IMPLEMENTATION_COMPLETE</promise>`，或者
+   - `research/implementation/tasks.json` 里的任务都完成，或者
+   - 达到最大轮数
+
+注意：`implement.sh` 只是循环执行器。真正负责设定实现任务分解和 prompt 的是 `research-implement`。
+
+换句话说：
+
+- `/research-implement`
+  - 负责准备或刷新实现产物
+  - 应该停在“建议你执行 `./scripts/research-bot/implement.sh <N>`”
+  - 不应该默认把整个实现循环在当前会话里跑完
+- `./scripts/research-bot/implement.sh 10`
+  - 负责执行多轮 fresh implementation rounds
 
 ### 4. 进入优化阶段
 
@@ -127,23 +165,19 @@ init.sh -> /research-plan -> /research-implement -> /research-optimize -> optimi
 /research-optimize "improve [metric] under [constraints]"
 ```
 
-这个 skill 负责准备并维护优化循环。它负责这些文件：
+这个 skill 负责准备并维护优化 run。它负责这些文件：
 
-- `optimization/OBJECTIVE.md`
-- `optimization/QUEUE.md`
-- `optimization/STATE.json`
-- `optimization/PROGRESS.md`
+- `optimization/prd.json`
+- `optimization/progress.md`
 - `optimization/CLAUDE.md`
+
+它的职责是“准备循环”，而不是“自己就是循环”。
 
 #### 这些文件分别是什么
 
-- `optimization/OBJECTIVE.md`
-  - 优化合同：目标、指标、目标值、约束、允许改动范围。
-- `optimization/QUEUE.md`
-  - 当前优化待办：active、pending、accepted、rejected、blocked。
-- `optimization/STATE.json`
-  - 当前优化 run 的机器可读状态快照。
-- `optimization/PROGRESS.md`
+- `optimization/prd.json`
+  - 优化任务分解：目标、主指标、停止条件、baseline，以及一组可在单轮内完成的任务。
+- `optimization/progress.md`
   - 追加式优化日志，记录每轮改了什么、怎么评估、结果如何、下一步是什么。
 - `optimization/CLAUDE.md`
   - 给 Claude Code 每一轮执行时使用的 prompt，`optimize.sh` 会反复把它交给 Claude。
@@ -161,13 +195,24 @@ init.sh -> /research-plan -> /research-implement -> /research-optimize -> optimi
 1. 读取 `optimization/CLAUDE.md`
 2. 把它交给 Claude Code
 3. 让 Claude 执行一轮有边界的优化
-4. 期待 Claude 更新 `QUEUE.md`、`STATE.json`、`PROGRESS.md`
+4. 期待 Claude 更新 `prd.json` 和 `progress.md`
 5. 持续重复，直到：
    - Claude 返回 `<promise>OPTIMIZATION_COMPLETE</promise>`，或者
-   - `optimization/STATE.json` 里标记完成/停止，或者
+   - `optimization/prd.json` 里的任务都完成，或者
    - 达到最大轮数
 
-注意：`optimize.sh` 只是循环执行器，不负责思考优化策略。真正负责设定目标、队列和 prompt 的是 `research-optimize`。
+注意：`optimize.sh` 只是循环执行器，不负责思考优化策略。真正负责设定任务分解和 prompt 的是 `research-optimize`。
+
+换句话说：
+
+- `/research-optimize`
+  - 负责准备或刷新优化产物
+  - 负责判断是继续当前 run，还是归档后开启新 run
+  - 应该把仓库准备到可以交给 shell runner 的状态
+- `./scripts/research-bot/optimize.sh 10`
+  - 负责把 `optimization/CLAUDE.md` 交给 Claude Code，最多重复执行 10 轮
+
+如果你之前只安装了 skills，没有把 scripts 一起带过去，那么目标项目里确实不会有 `optimize.sh`。现在安装脚本已经把这点补上了。
 
 ## 如何归档
 
@@ -194,11 +239,12 @@ archive/<timestamp>-my-topic/
 ## 推荐使用习惯
 
 1. 用 `research-plan` 一次性定义研究问题和里程碑。
-2. 用 `research-implement` 做出第一版可运行 baseline。
-3. 用 `research-optimize` 创建或刷新优化 run。
-4. 用 `optimize.sh` 执行多轮优化。
-5. 后续优化方向变化，尽量留在 `research-optimize` 内部处理。
-6. 当优化目标实质变化时，再归档旧 run。
+2. 用 `research-implement` 创建或刷新 implementation run。
+3. 用 `implement.sh` 执行多轮实现，直到 baseline 准备好。
+4. 用 `research-optimize` 创建或刷新优化 run。
+5. 用 `optimize.sh` 执行多轮优化。
+6. 后续优化方向变化，尽量留在 `research-optimize` 内部处理。
+7. 当优化目标实质变化时，再归档旧 run。
 
 ## 当前已经完整的部分
 
@@ -206,11 +252,12 @@ archive/<timestamp>-my-topic/
 
 - planning 持久化
 - implementation 持久化
+- `implement.sh` 驱动的重复实现循环
 - optimization 持久化
 - runtime 恢复索引
 - archive 支持
 - `optimize.sh` 驱动的重复优化循环
-- 可选的全局 skills 安装
+- 可选的安装到其他项目 `.claude/skills`
 
 ## 当前刻意不包含的部分
 

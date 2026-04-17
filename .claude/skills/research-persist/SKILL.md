@@ -36,10 +36,10 @@ Maintain only:
 `runtime/RESEARCH_STATE.json` should point to:
 
 - active phase,
-- current brief,
 - current plan,
-- implementation state,
-- optimization state,
+- planning history,
+- implementation tasks,
+- optimization prd,
 - recommended next skill,
 - updated timestamp.
 
