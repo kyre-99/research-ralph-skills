@@ -1,0 +1,12 @@
+{
+  "status": "in_progress",
+  "round": 0,
+  "objective": "",
+  "primary_metric": "",
+  "baseline_metric": null,
+  "best_metric": null,
+  "best_run_id": "",
+  "active_task": "",
+  "stop_reason": "",
+  "updated_at": ""
+}

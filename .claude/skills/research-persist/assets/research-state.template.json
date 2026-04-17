@@ -1,0 +1,12 @@
+{
+  "active_phase": "planning",
+  "recommended_next_skill": "research-plan",
+  "canonical_files": {
+    "brief": "research/brief.md",
+    "plan": "research/plan.md",
+    "plan_state": "research/plan-state.json",
+    "implementation_state": "research/implementation/IMPLEMENTATION_STATE.json",
+    "optimization_state": "optimization/STATE.json"
+  },
+  "updated_at": ""
+}

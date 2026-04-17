@@ -1,0 +1,18 @@
+# Reference materials - not needed for core workflow
+reference/
+referemce.md
+
+# Claude memory
+.claude/memory/
+.claude/projects/
+
+# Generated research artifacts
+research/
+optimization/
+runtime/
+archive/
+
+# Misc
+*.pyc
+__pycache__/
+.DS_Store
