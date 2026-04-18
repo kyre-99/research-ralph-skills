@@ -62,18 +62,79 @@ cd /path/to/target-project
 /path/to/reasearch-bot/scripts/research-bot/install-skills.sh
 ```
 
-## The Flow At A Glance
+## Main Usage
 
 ```text
-init.sh
+New project:
+  init.sh
   -> /research-plan
   -> /research-implement
   -> implement.sh
   -> /research-optimize
   -> optimize.sh
+
+Resume an existing project:
+  /research-pipeline
+
+Start a materially new direction:
+  archive current run
+  -> /research-plan
 ```
 
-After the initial setup, most ongoing iteration should happen in the optimization loop. Think of planning as choosing the mountain, implementation as building the gear, and optimization as climbing it without falling into a ravine. 🧗
+Most of the time, you only need these three entry patterns:
+
+### 1. Start a new project
+
+```bash
+./scripts/research-bot/init.sh
+```
+
+```text
+/research-plan "your research topic"
+/research-implement "build the first runnable baseline"
+./scripts/research-bot/implement.sh 10
+/research-optimize "improve [metric] under [constraints]"
+./scripts/research-bot/optimize.sh 10
+```
+
+### 2. Resume in a fresh session
+
+```text
+/research-pipeline continue the current research run
+```
+
+### 3. Start a new direction
+
+```bash
+./scripts/research-bot/archive-run.sh my-topic
+```
+
+```text
+/research-plan "the new research direction"
+```
+
+## What `research-pipeline` Actually Does
+
+`/research-pipeline` is the resume-and-route entrypoint for a fresh session.
+
+Use it when you do not want to manually decide which skill should run next.
+
+It will:
+
+- read `runtime/RESEARCH_STATE.json` first
+- inspect the key files listed there
+- figure out whether the project should continue planning, implementation, optimization, or runtime repair
+- route the workflow to the right stage instead of restarting from scratch
+
+In plain English: if you open a brand new session and ask “please continue the current work,” `research-pipeline` is the right first move. 🧭
+
+Recommended prompt:
+
+```text
+/research-pipeline continue the current research run
+```
+
+ℹ️ If `runtime/RESEARCH_STATE.json` is current, this gives the new session a reliable file-based handoff instead of depending on chat memory.
 
 ## Minimal File Model
 
@@ -121,95 +182,14 @@ It should summarize only:
 
 Treat it like a snapshot, not a diary. Overwrite the latest state summary instead of piling history into it. Sharp, current, useful. 🪄
 
-## Step By Step
+## Quick Notes
 
-### 1. Initialize the workspace
-
-```bash
-./scripts/research-bot/init.sh
-```
-
-This creates the minimal `research/`, `optimization/`, and `runtime/` structure if it does not already exist.
-
-### 2. Create or refine the plan
-
-```text
-/research-plan "your research topic"
-```
-
-This should create or update:
-
-- `research/plan.md`
-- `research/plan-history.md`
-
-Use `research-plan` when you are defining the problem, changing direction, or tightening the scope before code starts flying everywhere.
-
-### 3. Prepare the first implementation run
-
-```text
-/research-implement "build the first runnable baseline"
-```
-
-This should refresh:
-
-- `research/implementation/tasks.json`
-- `research/implementation/progress.md`
-- `runtime/RESEARCH_STATE.json`
-
-Important:
-
-- `/research-implement` prepares the run
-- `implement.sh` executes the repeated loop
-- `research/implementation/CLAUDE.md` should remain a stable protocol file
-
-Then run the loop:
-
-```bash
-./scripts/research-bot/implement.sh 10
-```
-
-That means: run up to 10 bounded implementation rounds.
-
-`implement.sh` will:
-
-1. Read `research/implementation/CLAUDE.md`
-2. Feed it to Claude Code
-3. Expect updates to `tasks.json` and `progress.md`
-4. Repeat until completion, task exhaustion, or the iteration cap
-
-### 4. Prepare the optimization run
-
-```text
-/research-optimize "improve [metric] under [constraints]"
-```
-
-This should maintain:
-
-- `optimization/prd.json`
-- `optimization/progress.md`
-- `optimization/CLAUDE.md`
-- `runtime/RESEARCH_STATE.json`
-
-Important:
-
-- `/research-optimize` sets the objective and task decomposition
-- `optimize.sh` runs the loop
-- `optimization/CLAUDE.md` should remain the stable per-round protocol
-
-Then run:
-
-```bash
-./scripts/research-bot/optimize.sh 10
-```
-
-That means: run up to 10 optimization rounds.
-
-`optimize.sh` will:
-
-1. Read `optimization/CLAUDE.md`
-2. Feed it to Claude Code
-3. Expect updates to `prd.json` and `progress.md`
-4. Repeat until the objective is complete, tasks are done, or the iteration cap is reached
+- `/research-plan` defines the research direction
+- `/research-implement` prepares implementation artifacts
+- `./scripts/research-bot/implement.sh 10` runs repeated implementation rounds
+- `/research-optimize` prepares optimization artifacts
+- `./scripts/research-bot/optimize.sh 10` runs repeated optimization rounds
+- `/research-pipeline` is the best way to resume in a new session
 
 ## Archiving Without Drama
 
@@ -233,7 +213,7 @@ Archive only the optimization state:
 ./scripts/research-bot/archive-optimization.sh optimization-reset
 ```
 
-This keeps old work recoverable without muddying the current loop. Past-you did the work; future-you deserves to find it. 📦
+This keeps old work recoverable without muddying the current loop. 📦
 
 ## Good Habits
 

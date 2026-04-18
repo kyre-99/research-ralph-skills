@@ -62,26 +62,83 @@ cd /path/to/target-project
 /path/to/reasearch-bot/scripts/research-bot/install-skills.sh
 ```
 
-## 整体流程，一眼看懂
+## 主要用法
 
 ```text
-init.sh
+新项目：
+  init.sh
   -> /research-plan
   -> /research-implement
   -> implement.sh
   -> /research-optimize
   -> optimize.sh
+
+恢复已有项目：
+  /research-pipeline
+
+切换到新的研究方向：
+  archive current run
+  -> /research-plan
 ```
 
-简单理解：
+大多数时候，你只需要记住这三种入口：
 
-- `research-plan` 负责想清楚问题
-- `research-implement` 负责把问题拆成能做的实现任务
-- `implement.sh` 负责重复推进实现
-- `research-optimize` 负责定义优化目标和实验回路
-- `optimize.sh` 负责反复跑优化轮次
+### 1. 开一个新项目
 
-规划像定方向，实装像搭底盘，优化像拧性能。别一上来就调参，否则很容易在空气里造火箭。🧪
+```bash
+./scripts/research-bot/init.sh
+```
+
+```text
+/research-plan "你的研究主题"
+/research-implement "build the first runnable baseline"
+./scripts/research-bot/implement.sh 10
+/research-optimize "improve [metric] under [constraints]"
+./scripts/research-bot/optimize.sh 10
+```
+
+### 2. 在新 session 里继续
+
+```text
+/research-pipeline continue the current research run
+```
+
+### 3. 开一个新的研究方向
+
+```bash
+./scripts/research-bot/archive-run.sh my-topic
+```
+
+```text
+/research-plan "新的研究方向"
+```
+
+## `research-pipeline` 到底是干嘛的
+
+`/research-pipeline` 是一个“恢复现场 + 自动分流”的入口 skill。
+
+适合在这些时候用：
+
+- 你开了一个全新的 session
+- 你不想自己判断下一步该跑哪个 skill
+- 你只想说一句“继续当前工作”
+
+它会：
+
+- 先读 `runtime/RESEARCH_STATE.json`
+- 再读里面列出来的关键文件
+- 判断当前应该继续 planning、implementation、optimization，还是先修复 runtime 状态
+- 把流程路由到合适的下一阶段，而不是每次都从头猜
+
+说白一点：如果你新开一个 session，只想让它接着做，`research-pipeline` 就是最适合的入口。🧭
+
+推荐的新 session 用法：
+
+```text
+/research-pipeline continue the current research run
+```
+
+ℹ️ 只要 `runtime/RESEARCH_STATE.json` 维护得比较新，这个 skill 就能用文件里的状态把新会话接上，而不是依赖聊天记忆。
 
 ## 最小文件模型
 
@@ -129,99 +186,14 @@ init.sh
 
 把它当“快照”，不要把它当“流水账”。保持短、准、新，比堆一大坨历史更有用。🪄
 
-## 分步骤使用
+## 快速说明
 
-### 1. 初始化工作区
-
-```bash
-./scripts/research-bot/init.sh
-```
-
-这会在缺失时创建最小的 `research/`、`optimization/`、`runtime/` 结构。
-
-### 2. 创建或收敛研究计划
-
-```text
-/research-plan "你的研究主题"
-```
-
-它应该创建或更新：
-
-- `research/plan.md`
-- `research/plan-history.md`
-
-适合在这些时候使用：
-
-- 刚开始立题
-- 研究问题发生变化
-- 方向太散，需要重新收敛
-
-### 3. 准备第一轮实现
-
-```text
-/research-implement "build the first runnable baseline"
-```
-
-它应该刷新：
-
-- `research/implementation/tasks.json`
-- `research/implementation/progress.md`
-- `runtime/RESEARCH_STATE.json`
-
-这里要注意：
-
-- `/research-implement` 的职责是准备实现轮次
-- `implement.sh` 的职责是执行多轮循环
-- `research/implementation/CLAUDE.md` 应尽量保持为稳定协议文件
-
-然后执行：
-
-```bash
-./scripts/research-bot/implement.sh 10
-```
-
-意思是：最多跑 10 轮实现。
-
-`implement.sh` 会：
-
-1. 读取 `research/implementation/CLAUDE.md`
-2. 把它交给 Claude Code
-3. 期待 Claude 更新 `tasks.json` 和 `progress.md`
-4. 持续循环，直到完成目标、任务清空，或达到轮数上限
-
-### 4. 准备优化轮次
-
-```text
-/research-optimize "improve [metric] under [constraints]"
-```
-
-它应该维护：
-
-- `optimization/prd.json`
-- `optimization/progress.md`
-- `optimization/CLAUDE.md`
-- `runtime/RESEARCH_STATE.json`
-
-这里也一样：
-
-- `/research-optimize` 负责定义目标和任务拆解
-- `optimize.sh` 负责执行循环
-- `optimization/CLAUDE.md` 应尽量保持为稳定的单轮协议文件
-
-然后执行：
-
-```bash
-./scripts/research-bot/optimize.sh 10
-```
-
-意思是：最多跑 10 轮优化。
-
-`optimize.sh` 会：
-
-1. 读取 `optimization/CLAUDE.md`
-2. 把它交给 Claude Code
-3. 期待 Claude 更新 `prd.json` 和 `progress.md`
-4. 持续循环，直到目标完成、任务结束，或达到轮数上限
+- `/research-plan`：定义研究方向
+- `/research-implement`：准备实现任务和实现状态
+- `./scripts/research-bot/implement.sh 10`：执行多轮实现
+- `/research-optimize`：准备优化目标和优化状态
+- `./scripts/research-bot/optimize.sh 10`：执行多轮优化
+- `/research-pipeline`：新 session 恢复现场时优先用它
 
 ## 归档，别硬糊在一起
 
@@ -245,7 +217,7 @@ init.sh
 ./scripts/research-bot/archive-optimization.sh optimization-reset
 ```
 
-这样旧工作还能追溯，当前工作也不会越跑越糊。过去的你已经很努力了，未来的你值得一个找得到的历史记录。📦
+这样旧工作还能追溯，当前工作也不会越跑越糊。📦
 
 ## 推荐习惯
 
