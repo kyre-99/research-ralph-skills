@@ -1,68 +1,91 @@
 # Research Bot
 
-一个面向 Claude Code 的最小持久化研究工作流，设计思路参考 Ralph 的 file-first loop。
+一个给 Claude Code 用的 file-first 研究工作流：比聊天记忆更稳，比“我应该还记得上次做到哪了吧”更靠谱。🧠⚙️
 
-这个仓库的核心原则很简单：流程恢复应该依赖一小组关键文件，而不是依赖聊天上下文。规划、实现、优化、归档状态都落在磁盘上，所以下一轮可以直接接着做。
+它的核心思路很直接：不要把连续研究流程寄托在上下文窗口上，而是把关键状态落到文件里。计划、实现拆解、优化日志、运行时摘要都在磁盘上，所以你今天关掉会话，明天回来，项目还是接得上。✨
 
-## 这个仓库提供了什么
+English version: [README.md](README.md)
+
+## 这东西是干嘛的
+
+很多 AI 工作流一开始都很丝滑，直到上下文没了，或者模型“似曾相识但又完全不对劲”。
+
+这个仓库换了个思路：
+
+- 用文件保存研究状态
+- 让每个阶段都留下明确交接物
+- 让新会话靠仓库恢复，而不是靠聊天记忆硬撑
+
+如果你喜欢 Ralph 风格循环、长线实验、可恢复的 agent 工作流，这个仓库基本就是冲着这个方向来的。🚂
+
+## 仓库里有什么
 
 - `.claude/skills/` 里的项目级 skills
-- 工作区初始化脚本：`scripts/research-bot/init.sh`
-- 重复实现循环脚本：`scripts/research-bot/implement.sh`
-- 重复优化循环脚本：`scripts/research-bot/optimize.sh`
-- 归档脚本：`scripts/research-bot/archive-run.sh`
-- 一键安装到项目 `.claude/skills` 的脚本：`scripts/research-bot/install-skills.sh`
+- 初始化脚本：`scripts/research-bot/init.sh`
+- 实现循环 runner：`scripts/research-bot/implement.sh`
+- 优化循环 runner：`scripts/research-bot/optimize.sh`
+- 整体归档脚本：`scripts/research-bot/archive-run.sh`
+- 实现阶段归档脚本：`scripts/research-bot/archive-implementation.sh`
+- 优化阶段归档脚本：`scripts/research-bot/archive-optimization.sh`
+- 安装脚本：`scripts/research-bot/install-skills.sh`
 
-## 怎么使用
+## 两种使用方式
 
-有两种使用方式：
+### 1. 直接在当前仓库里用
 
-### 方式 1：直接作为项目 skills 使用
+如果你就在这个仓库里工作，Claude Code 可以直接读取 `.claude/skills/`，不需要额外安装。开箱即用，少折腾一点就是幸福。🎉
 
-如果你就在这个仓库里工作，Claude Code 可以直接读取 `.claude/skills/`，不需要额外安装。
+### 2. 安装到别的项目里
 
-### 方式 2：安装到其他项目的 `.claude/skills`
-
-如果你想在别的仓库里复用这些 skills：
+如果你想在其他仓库复用这套流程：
 
 ```bash
 ./scripts/research-bot/install-skills.sh /path/to/target-project
 ```
 
-它会把：
+它会同时复制：
 
-- skills 复制到 `.claude/skills/`
-- 辅助脚本复制到 `scripts/research-bot/`
+- skills 到 `.claude/skills/`
+- 辅助脚本到 `scripts/research-bot/`
 
-也就是说，目标项目会同时拿到 skills 和 runner 脚本。
-
-具体是：
+目标项目最终会得到：
 
 ```text
 /path/to/target-project/.claude/skills/
 /path/to/target-project/scripts/research-bot/
 ```
 
-如果你当前就在目标项目目录里，也可以省略参数：
+如果你已经在目标项目目录里，也可以省略参数：
 
 ```bash
 cd /path/to/target-project
 /path/to/reasearch-bot/scripts/research-bot/install-skills.sh
 ```
 
-## 整体流程
-
-推荐链路是：
+## 整体流程，一眼看懂
 
 ```text
-init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-optimize -> optimize.sh
+init.sh
+  -> /research-plan
+  -> /research-implement
+  -> implement.sh
+  -> /research-optimize
+  -> optimize.sh
 ```
 
-进入优化阶段之后，大部分持续迭代都应该留在 `/research-optimize` 里完成。
+简单理解：
+
+- `research-plan` 负责想清楚问题
+- `research-implement` 负责把问题拆成能做的实现任务
+- `implement.sh` 负责重复推进实现
+- `research-optimize` 负责定义优化目标和实验回路
+- `optimize.sh` 负责反复跑优化轮次
+
+规划像定方向，实装像搭底盘，优化像拧性能。别一上来就调参，否则很容易在空气里造火箭。🧪
 
 ## 最小文件模型
 
-系统只保留恢复工作所需的核心文件。
+整个系统故意保持很小。目标不是“什么都记”，而是“把下一个 round 真正需要的东西记下来”。
 
 ### Planning
 
@@ -86,17 +109,25 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 - `runtime/RESEARCH_STATE.json`
 - `runtime/MANIFEST.md`
 
-`runtime/RESEARCH_STATE.json` 是给 fresh AI round 用的轻量上下文入口，只需要概括：
+### Archives
 
-- 当前 phase
+- `archive/<timestamp>-<slug>/`
+- `archive/implementation/<timestamp>-<slug>/`
+- `archive/optimization/<timestamp>-<slug>/`
+
+## 最关键的那个文件
+
+`runtime/RESEARCH_STATE.json` 是 fresh session 的轻量入口文件。
+
+它只需要概括：
+
+- 当前阶段
 - 当前目标
 - 当前状态
 - 下一步动作
-- 接下来应该读的关键文件
+- 接下来该读哪些关键文件
 
-### Archive
-
-- `archive/<timestamp>-<slug>/`
+把它当“快照”，不要把它当“流水账”。保持短、准、新，比堆一大坨历史更有用。🪄
 
 ## 分步骤使用
 
@@ -106,37 +137,44 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 ./scripts/research-bot/init.sh
 ```
 
-这会在缺失时创建最小的 `research/`、`optimization/`、`runtime/` 文件集合。
-其中 runtime 文件的目标是帮助新的 agent 快速对齐上下文，而不是重复保存所有细节。
+这会在缺失时创建最小的 `research/`、`optimization/`、`runtime/` 结构。
 
-### 2. 建立初始研究计划
+### 2. 创建或收敛研究计划
 
 ```text
 /research-plan "你的研究主题"
 ```
 
-它应该填写或更新：
+它应该创建或更新：
 
 - `research/plan.md`
 - `research/plan-history.md`
 
-`research-plan` 主要用于最开始建题，或者当研究问题本身发生变化时重新收敛方向。
+适合在这些时候使用：
 
-### 3. 做出第一版可运行实现
+- 刚开始立题
+- 研究问题发生变化
+- 方向太散，需要重新收敛
+
+### 3. 准备第一轮实现
 
 ```text
 /research-implement "build the first runnable baseline"
 ```
 
-它应该更新：
+它应该刷新：
 
 - `research/implementation/tasks.json`
 - `research/implementation/progress.md`
-- `research/implementation/CLAUDE.md`
+- `runtime/RESEARCH_STATE.json`
 
-这里的目标是把当前计划拆成很多可逐步完成的实现任务，并把实现循环准备好。默认情况下，`/research-implement` 不应该在当前会话里把整轮实现自己跑掉。
+这里要注意：
 
-#### 然后运行实现循环
+- `/research-implement` 的职责是准备实现轮次
+- `implement.sh` 的职责是执行多轮循环
+- `research/implementation/CLAUDE.md` 应尽量保持为稳定协议文件
+
+然后执行：
 
 ```bash
 ./scripts/research-bot/implement.sh 10
@@ -144,58 +182,33 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 
 意思是：最多跑 10 轮实现。
 
-`implement.sh` 做的事情是：
+`implement.sh` 会：
 
 1. 读取 `research/implementation/CLAUDE.md`
 2. 把它交给 Claude Code
-3. 让 Claude 执行一轮有边界的实现
-4. 期待 Claude 更新 `tasks.json` 和 `progress.md`
-5. 持续重复，直到：
-   - Claude 返回 `<promise>IMPLEMENTATION_COMPLETE</promise>`，或者
-   - `research/implementation/tasks.json` 里的任务都完成，或者
-   - 达到最大轮数
+3. 期待 Claude 更新 `tasks.json` 和 `progress.md`
+4. 持续循环，直到完成目标、任务清空，或达到轮数上限
 
-注意：`implement.sh` 只是循环执行器。真正负责设定实现任务分解和 prompt 的是 `research-implement`。
-
-换句话说：
-
-- `/research-implement`
-  - 负责准备或刷新实现产物
-  - 应该停在“建议你执行 `./scripts/research-bot/implement.sh <N>`”
-  - 不应该默认把整个实现循环在当前会话里跑完
-- `./scripts/research-bot/implement.sh 10`
-  - 负责执行多轮 fresh implementation rounds
-
-一个实用判断标准：
-
-- 如果 `/research-implement` 结束时没有明确建议你运行哪条 shell 命令，就说明交接还不完整，应该要求它把 runner-ready artifacts 和确切执行命令一起补齐。
-
-### 4. 进入优化阶段
-
-先运行：
+### 4. 准备优化轮次
 
 ```text
 /research-optimize "improve [metric] under [constraints]"
 ```
 
-这个 skill 负责准备并维护优化 run。它负责这些文件：
+它应该维护：
 
 - `optimization/prd.json`
 - `optimization/progress.md`
 - `optimization/CLAUDE.md`
+- `runtime/RESEARCH_STATE.json`
 
-它的职责是“准备循环”，而不是“自己就是循环”。
+这里也一样：
 
-#### 这些文件分别是什么
+- `/research-optimize` 负责定义目标和任务拆解
+- `optimize.sh` 负责执行循环
+- `optimization/CLAUDE.md` 应尽量保持为稳定的单轮协议文件
 
-- `optimization/prd.json`
-  - 优化任务分解：目标、主指标、停止条件、baseline，以及一组可在单轮内完成的任务。
-- `optimization/progress.md`
-  - 追加式优化日志，记录每轮改了什么、怎么评估、结果如何、下一步是什么。
-- `optimization/CLAUDE.md`
-  - 给 Claude Code 每一轮执行时使用的 prompt，`optimize.sh` 会反复把它交给 Claude。
-
-#### 然后运行循环
+然后执行：
 
 ```bash
 ./scripts/research-bot/optimize.sh 10
@@ -203,84 +216,52 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 
 意思是：最多跑 10 轮优化。
 
-`optimize.sh` 做的事情是：
+`optimize.sh` 会：
 
 1. 读取 `optimization/CLAUDE.md`
 2. 把它交给 Claude Code
-3. 让 Claude 执行一轮有边界的优化
-4. 期待 Claude 更新 `prd.json` 和 `progress.md`
-5. 持续重复，直到：
-   - Claude 返回 `<promise>OPTIMIZATION_COMPLETE</promise>`，或者
-   - `optimization/prd.json` 里的任务都完成，或者
-   - 达到最大轮数
+3. 期待 Claude 更新 `prd.json` 和 `progress.md`
+4. 持续循环，直到目标完成、任务结束，或达到轮数上限
 
-注意：`optimize.sh` 只是循环执行器，不负责思考优化策略。真正负责设定任务分解和 prompt 的是 `research-optimize`。
+## 归档，别硬糊在一起
 
-换句话说：
+当目标发生实质变化，新一轮已经不能和当前 run 相提并论时，先归档，再继续。
 
-- `/research-optimize`
-  - 负责准备或刷新优化产物
-  - 负责判断是继续当前 run，还是归档后开启新 run
-  - 应该把仓库准备到可以交给 shell runner 的状态
-- `./scripts/research-bot/optimize.sh 10`
-  - 负责把 `optimization/CLAUDE.md` 交给 Claude Code，最多重复执行 10 轮
-
-一个实用判断标准：
-
-- 如果 `/research-optimize` 结束时没有明确建议你运行哪条 shell 命令，就说明交接还不完整，应该要求它把 runner-ready artifacts 和确切执行命令一起补齐。
-
-如果你之前只安装了 skills，没有把 scripts 一起带过去，那么目标项目里确实不会有 `optimize.sh`。现在安装脚本已经把这点补上了。
-
-## 如何归档
-
-当优化目标发生实质变化，新的 run 与当前 run 已经不可比时，先归档当前状态：
+归档整个 run：
 
 ```bash
 ./scripts/research-bot/archive-run.sh my-topic
 ```
 
-它会把：
+只归档实现阶段：
 
-- `research/`
-- `optimization/`
-- `runtime/`
-
-复制到：
-
-```text
-archive/<timestamp>-my-topic/
+```bash
+./scripts/research-bot/archive-implementation.sh implementation-reset
 ```
 
-在这套流程里，归档主要属于 `research-optimize` 的职责，而不是 `research-plan`。
+只归档优化阶段：
 
-## 推荐使用习惯
+```bash
+./scripts/research-bot/archive-optimization.sh optimization-reset
+```
 
-1. 用 `research-plan` 一次性定义研究问题和里程碑。
-2. 用 `research-implement` 创建或刷新 implementation run。
-3. 用 `implement.sh` 执行多轮实现，直到 baseline 准备好。
-4. 用 `research-optimize` 创建或刷新优化 run。
-5. 用 `optimize.sh` 执行多轮优化。
-6. 后续优化方向变化，尽量留在 `research-optimize` 内部处理。
-7. 当优化目标实质变化时，再归档旧 run。
+这样旧工作还能追溯，当前工作也不会越跑越糊。过去的你已经很努力了，未来的你值得一个找得到的历史记录。📦
 
-## 当前已经完整的部分
+## 推荐习惯
 
-这套仓库目前已经完整支持最小 artifact-first workflow：
+- 让 `RESEARCH_STATE.json` 始终简短、最新
+- 把文件当作记忆表面，而不是把聊天记录当数据库
+- 先把计划收敛，再扩展实现
+- 先把实现跑起来，再谈优化
+- 目标变了就归档，不要把两条完全不同的实验线硬说成同一个 run
 
-- planning 持久化
-- implementation 持久化
-- `implement.sh` 驱动的重复实现循环
-- optimization 持久化
-- runtime 恢复索引
-- archive 支持
-- `optimize.sh` 驱动的重复优化循环
-- 可选的安装到其他项目 `.claude/skills`
+## 适合谁用
 
-## 当前刻意不包含的部分
+这套仓库很适合下面这些情况：
 
-- 远程任务调度
-- watchdog 守护进程
-- 多 agent review loop
-- 自动实验基础设施
+- 你想做一个可恢复的 AI 辅助研究流程
+- 你不想每次上下文一断就从头解释项目
+- 你需要反复 implement / evaluate / improve 的闭环
+- 你想要的是“小而硬”的结构，不是大而全的框架
 
-这些可以以后继续扩展，但它们不属于这个最小第一版的范围。
+如果这些点戳中了你，那这仓库多半能帮上忙。🔬

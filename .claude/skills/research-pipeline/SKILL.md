@@ -2,6 +2,7 @@
 name: research-pipeline
 description: Orchestrate the persisted research workflow by reading and updating the project's planning, implementation, optimization, and runtime artifacts. Use when the user wants the whole research bot workflow to continue from the current state instead of starting each stage from scratch. Triggers on: full research pipeline, continue the research bot, run the whole workflow, resume the workflow, orchestrate research skills.
 argument-hint: [research goal]
+allowed-tools: Bash(*) Read Grep Glob Skill
 disable-model-invocation: true
 user-invocable: true
 ---

@@ -33,6 +33,8 @@ if [ ! -f "$PROGRESS_FILE" ]; then
 fi
 
 echo "Starting research implementation loop for $MAX_ITERATIONS iterations"
+echo "Runner role: this script owns the multi-round loop."
+echo "Authoring role: /research-implement should prepare artifacts and recommend this command instead of running the loop itself."
 
 for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo ""
@@ -40,7 +42,28 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo "  Implementation Iteration $i of $MAX_ITERATIONS"
   echo "==============================================================="
 
-  OUTPUT=$(claude --dangerously-skip-permissions --print < "$PROMPT_FILE" 2>&1 | tee /dev/stderr) || true
+  OUTPUT=$(
+    (
+      cd "$ROOT_DIR"
+      {
+        echo "Implementation workspace context:"
+        echo "- Project root: $ROOT_DIR"
+        echo "- Instruction file: $PROMPT_FILE"
+        echo "- Task file: $TASKS_FILE"
+        echo "- Progress file: $PROGRESS_FILE"
+        echo ""
+        echo "Before starting implementation work:"
+        echo "1. Read the instruction file, task file, and progress file at the exact paths above."
+        echo "2. Use the project root above as the working directory."
+        echo "3. Follow the instruction file below as the primary implementation guide."
+        echo ""
+        echo "----- BEGIN CLAUDE.md -----"
+        cat "$PROMPT_FILE"
+        echo ""
+        echo "----- END CLAUDE.md -----"
+      } | claude --dangerously-skip-permissions --print
+    ) 2>&1 | tee /dev/stderr
+  ) || true
 
   if echo "$OUTPUT" | grep -q "<promise>IMPLEMENTATION_COMPLETE</promise>"; then
     echo ""
@@ -74,4 +97,5 @@ done
 echo ""
 echo "Reached max iterations ($MAX_ITERATIONS)."
 echo "Check $PROGRESS_FILE for details."
+echo "If more rounds are needed, rerun: ./scripts/research-bot/implement.sh $MAX_ITERATIONS"
 exit 1

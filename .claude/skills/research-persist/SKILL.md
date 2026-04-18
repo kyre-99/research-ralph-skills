@@ -2,6 +2,7 @@
 name: research-persist
 description: Set up or repair only the minimal persistent file and runner structure that lets planning, implementation, and optimization survive context resets or interrupted sessions. Use when the user wants Ralph-like persistence, resumable execution, state files, progress logs, or a durable research runner. Triggers on: persistent loop, resume optimization, watchdog, keep running after context reset, stateful research runner, long-running research bot.
 argument-hint: [long-running task or loop objective]
+allowed-tools: Bash(*) Read Write Edit Grep Glob Skill
 disable-model-invocation: true
 user-invocable: true
 ---
@@ -42,6 +43,8 @@ Maintain only:
 - recommended next skill,
 - key files for the next agent to read,
 - updated timestamp.
+
+Treat this file as the current runtime snapshot. Overwrite the summary fields when state changes; do not append history into this JSON file.
 
 ## Recovery Procedure
 

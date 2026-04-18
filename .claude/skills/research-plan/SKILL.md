@@ -2,6 +2,7 @@
 name: research-plan
 description: Discuss a research problem with the user, clarify the scope, and persist the outcome as a durable research plan plus a planning history log. Use when the user wants to shape an idea, refine a research question, compare directions, define milestones, or produce a reusable plan for implementation and optimization. Triggers on: research plan, refine this idea, discuss a paper idea, build a research plan, turn this into a project plan, define the research scope.
 argument-hint: [research topic or problem]
+allowed-tools: Bash(*) Read Write Edit Grep Glob AskUserQuestion Skill
 user-invocable: true
 ---
 

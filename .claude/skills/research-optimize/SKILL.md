@@ -2,6 +2,7 @@
 name: research-optimize
 description: Prepare and maintain a persistent Ralph-like optimization run for research code using prd.json, progress.md, and CLAUDE.md. Use when the user wants repeated implement-evaluate-improve cycles with a clear optimization target and resumable state. Triggers on: optimize this experiment, improve metric X, automatic tuning, autoresearch style optimization, keep improving until target, prepare an optimization loop, set up optimization run.
 argument-hint: [objective, target metric, and stopping rule]
+allowed-tools: Bash(*) Read Write Edit Grep Glob Skill
 disable-model-invocation: true
 user-invocable: true
 ---
@@ -38,7 +39,6 @@ Its job is to:
 
 - define or refresh the optimization objective,
 - define or refresh the optimization task decomposition,
-- define or refresh the single-iteration Claude prompt,
 - refresh `runtime/RESEARCH_STATE.json` with a short summary of the current optimization context,
 - decide whether the current run should continue or be archived and replaced,
 - leave the project ready for `./scripts/research-bot/optimize.sh`.
@@ -82,7 +82,7 @@ Before the loop starts, ensure `prd.json` defines:
 
 If any item is missing, infer a reasonable default and write it explicitly.
 If the optimization objective changes materially from the current run, archive the current run before replacing the optimization files. Use `./scripts/research-bot/archive-optimization.sh "<reason>"` for this instead of silently overwriting the current state.
-Always initialize or refresh `optimization/CLAUDE.md` so it matches the current `prd.json` and `progress.md` before handing control to `./scripts/research-bot/optimize.sh`.
+Keep `optimization/CLAUDE.md` as a stable runner protocol. Do not rewrite it during normal run preparation.
 
 ## Setup Protocol
 
@@ -96,9 +96,9 @@ Each invocation of this skill should do exactly this:
    - a materially new optimization run.
 5. If it is a materially new run:
    - archive the current run with `./scripts/research-bot/archive-optimization.sh "<reason>"`,
-   - then rewrite `prd.json`, `progress.md`, and `CLAUDE.md`.
+   - then rewrite `prd.json` and `progress.md`.
 6. If it is a refinement of the current run:
-   - update `prd.json`, `progress.md`, and `CLAUDE.md` in place.
+   - update `prd.json` and `progress.md` in place.
 7. Update `runtime/RESEARCH_STATE.json` with:
    - `active_phase`
    - `current_goal`
@@ -114,7 +114,7 @@ Each invocation of this skill should do exactly this:
 This skill owns iterative optimization direction changes and run preparation.
 
 - Small refinements should stay in the current run and be recorded in `prd.json` and `progress.md`.
-- Material objective changes should start by archiving the current run, then rewriting `prd.json`, `progress.md`, and `CLAUDE.md`.
+- Material objective changes should start by archiving the current run, then rewriting `prd.json` and `progress.md`.
 - Treat "new optimization direction" as part of the optimization loop, not as a reason to go back to `/research-plan`.
 
 ## prd.json Discipline
@@ -206,11 +206,9 @@ On re-entry:
 
 ## Runner Integration
 
-Keep `optimization/CLAUDE.md` aligned with the current `prd.json` and `progress.md` so an external runner can invoke repeated optimization rounds.
-
 If the project needs a shell loop, use the template in `${CLAUDE_SKILL_DIR}/assets/optimizer-claude.template.md` together with `scripts/research-bot/optimize.sh`.
 
-`optimization/CLAUDE.md` should be a single-iteration instruction file for a fresh Claude invocation, similar to Ralph's `CLAUDE.md`.
+`optimization/CLAUDE.md` should be a stable single-iteration instruction file for a fresh Claude invocation. It should define the protocol, not mirror the current PRD line by line.
 
 ## Guardrails
 

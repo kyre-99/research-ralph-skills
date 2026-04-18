@@ -2,6 +2,7 @@
 name: research-implement
 description: Implement a persisted research plan in code and maintain a Ralph-like task list plus progress log for implementation. Use when the user already has a research direction and wants runnable code, experiment scaffolding, baselines, evaluation scripts, or a first executable prototype. Triggers on: implement this research plan, build the experiment, create the baseline, turn the plan into code, scaffold the project for this idea.
 argument-hint: [brief, plan, or implementation goal]
+allowed-tools: Bash(*) Read Write Edit Grep Glob Skill
 disable-model-invocation: true
 user-invocable: true
 ---
@@ -36,7 +37,6 @@ Its job is to:
 - derive implementation tasks from `research/plan.md`,
 - refresh `research/implementation/tasks.json`,
 - refresh `research/implementation/progress.md` when the plan changes,
-- refresh `research/implementation/CLAUDE.md`,
 - refresh `runtime/RESEARCH_STATE.json` with a short summary of the current implementation context,
 - leave the repository ready for `./scripts/research-bot/implement.sh`.
 
@@ -50,7 +50,6 @@ By default, stop after preparing or refreshing:
 
 - `research/implementation/tasks.json`
 - `research/implementation/progress.md`
-- `research/implementation/CLAUDE.md`
 - `runtime/RESEARCH_STATE.json`
 
 Then recommend the shell runner:
@@ -71,9 +70,9 @@ Do not start implementing queued tasks in this skill unless the user explicitly 
    - a materially new implementation run.
 5. If it is a materially new implementation run:
    - archive the current implementation state with `./scripts/research-bot/archive-implementation.sh "<reason>"`,
-   - then rewrite `research/implementation/tasks.json`, `research/implementation/progress.md`, and `research/implementation/CLAUDE.md`.
+   - then rewrite `research/implementation/tasks.json` and `research/implementation/progress.md`.
 6. If it is a refinement of the current implementation run:
-   - update `research/implementation/tasks.json`, `research/implementation/progress.md`, and `research/implementation/CLAUDE.md` in place.
+   - update `research/implementation/tasks.json` and `research/implementation/progress.md` in place.
 7. Update `runtime/RESEARCH_STATE.json` with:
    - `active_phase`
    - `current_goal`
@@ -148,7 +147,16 @@ Append-only log with:
 
 ## `CLAUDE.md`
 
-This file must be a single-iteration instruction file for a fresh Claude invocation, similar to Ralph's `CLAUDE.md`.
+This file is a stable single-iteration protocol for a fresh Claude invocation.
+
+It should explain:
+
+- where to read context from,
+- what kind of bounded work to do,
+- what files must be updated,
+- what stop condition to use.
+
+Do not rewrite this file for normal run preparation. Treat it as fixed runner guidance unless you are intentionally changing the workflow protocol itself.
 
 ## Rules
 

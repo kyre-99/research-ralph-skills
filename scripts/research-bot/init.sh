@@ -90,6 +90,7 @@ write_if_missing "$ROOT_DIR/research/implementation/CLAUDE.md" "# Research Imple
 
 You are one fresh implementation iteration in a Ralph-like loop.
 You are not responsible for starting or orchestrating the outer loop yourself.
+This file is a stable runner protocol. Do not treat it as a per-run planning document.
 
 ## Read First
 
@@ -109,6 +110,12 @@ You are not responsible for starting or orchestrating the outer loop yourself.
    - \`research/implementation/tasks.json\`
    - \`runtime/RESEARCH_STATE.json\` if it exists
 6. Preserve important implementation decisions in \`research/implementation/tasks.json\`.
+
+## Protocol Notes
+
+- Use \`runtime/RESEARCH_STATE.json\` only as a current snapshot of where the project stands.
+- Treat \`research/implementation/tasks.json\` and \`research/implementation/progress.md\` as the changing implementation state.
+- When updating \`runtime/RESEARCH_STATE.json\`, overwrite the current summary fields instead of appending history.
 
 ## Important
 
@@ -166,6 +173,7 @@ write_if_missing "$ROOT_DIR/optimization/CLAUDE.md" "# Research Optimizer Iterat
 
 You are one fresh optimization iteration in a Ralph-like loop.
 You are not responsible for starting or orchestrating the outer loop yourself.
+This file is a stable runner protocol. Do not treat it as a per-run planning document.
 
 ## Read First
 
@@ -187,6 +195,12 @@ You are not responsible for starting or orchestrating the outer loop yourself.
    - \`optimization/prd.json\`
    - \`runtime/RESEARCH_STATE.json\` if it exists
 6. Preserve the known-best configuration and important decision notes in \`optimization/prd.json\`.
+
+## Protocol Notes
+
+- Use \`runtime/RESEARCH_STATE.json\` only as a current snapshot of where the project stands.
+- Treat \`optimization/prd.json\` and \`optimization/progress.md\` as the changing optimization state.
+- When updating \`runtime/RESEARCH_STATE.json\`, overwrite the current summary fields instead of appending history.
 
 ## Important
 
@@ -225,10 +239,11 @@ write_if_missing "$ROOT_DIR/runtime/MANIFEST.md" "# Runtime Manifest
 - \`research/plan-history.md\`: planning history
 - \`research/implementation/tasks.json\`: implementation task decomposition
 - \`research/implementation/progress.md\`: implementation log
-- \`research/implementation/CLAUDE.md\`: single-iteration implementation prompt
+- \`research/implementation/CLAUDE.md\`: stable implementation runner protocol
 - \`optimization/prd.json\`: optimization task decomposition and objective
 - \`optimization/progress.md\`: optimization log
-- \`optimization/CLAUDE.md\`: single-iteration optimization prompt
+- \`optimization/CLAUDE.md\`: stable optimization runner protocol
+- \`runtime/RESEARCH_STATE.json\`: current runtime snapshot, overwritten as state changes
 "
 
 echo "Research bot artifacts initialized."

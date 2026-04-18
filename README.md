@@ -1,70 +1,83 @@
 # Research Bot
 
-Minimal persistent research workflow for Claude Code, inspired by Ralph's file-first loop.
+A file-first research workflow for Claude Code that is a little more stubborn than chat memory, and a lot easier to resume. 🧠⚙️
 
-This repo is built around one idea: the workflow should resume from a small set of files, not from chat memory. Planning, implementation, optimization, and archive state are all persisted on disk so the next round can continue cleanly.
+Instead of hoping the next session remembers everything, this repo keeps the important state on disk: plans, implementation tasks, optimization logs, and runtime handoff files. Close the laptop, lose the context window, come back tomorrow — the workflow still knows where it was. ✨
 
-See the Chinese guide in [README_CN.md](README_CN.md).
+Chinese version: [README_CN.md](README_CN.md)
 
-## What this repo gives you
+## Why This Exists
+
+Most AI workflows feel great right up until the moment the context disappears.
+
+This repo is built around a different rule:
+
+- persist the research state in files
+- let each stage leave a clean handoff
+- make every new session able to restart from the repo, not from memory
+
+If you like Ralph-style loops, long-running experiment work, or resumable agent pipelines, this project is very much in that lane. 🚂
+
+## What You Get
 
 - Project skills in `.claude/skills/`
-- A workspace bootstrap script: `scripts/research-bot/init.sh`
-- A repeated implementation runner: `scripts/research-bot/implement.sh`
-- A repeated optimization runner: `scripts/research-bot/optimize.sh`
-- An archive helper: `scripts/research-bot/archive-run.sh`
-- A one-command installer for project skills: `scripts/research-bot/install-skills.sh`
+- Bootstrap script: `scripts/research-bot/init.sh`
+- Implementation loop runner: `scripts/research-bot/implement.sh`
+- Optimization loop runner: `scripts/research-bot/optimize.sh`
+- Full-run archive helper: `scripts/research-bot/archive-run.sh`
+- Implementation archive helper: `scripts/research-bot/archive-implementation.sh`
+- Optimization archive helper: `scripts/research-bot/archive-optimization.sh`
+- Installer for reusing the setup in another repo: `scripts/research-bot/install-skills.sh`
 
-## How to use it
+## Two Ways To Use It
 
-There are two ways to use the skills:
+### 1. Use it directly in this repo
 
-### Option 1: Use as project skills
+If you are working inside this repository, Claude Code can use the skills in `.claude/skills/` directly. No installation ceremony required. 🎉
 
-If you are working inside this repo, Claude Code can use the skills from `.claude/skills/` directly. No installation is required.
+### 2. Install it into another repo
 
-### Option 2: Install into another project's `.claude/skills`
-
-If you want to reuse these skills in another repo:
+If you want the same workflow somewhere else:
 
 ```bash
 ./scripts/research-bot/install-skills.sh /path/to/target-project
 ```
 
-This copies:
+That copies both:
 
-- the skills into `.claude/skills/`
-- the helper scripts into `scripts/research-bot/`
+- skills into `.claude/skills/`
+- helper scripts into `scripts/research-bot/`
 
-So the target project receives both the skills and the runner scripts.
-
-Specifically:
+Result:
 
 ```text
 /path/to/target-project/.claude/skills/
 /path/to/target-project/scripts/research-bot/
 ```
 
-If you run it from inside the target project, you can omit the argument:
+If you are already inside the target repo:
 
 ```bash
 cd /path/to/target-project
 /path/to/reasearch-bot/scripts/research-bot/install-skills.sh
 ```
 
-## The workflow
-
-The intended flow is:
+## The Flow At A Glance
 
 ```text
-init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-optimize -> optimize.sh
+init.sh
+  -> /research-plan
+  -> /research-implement
+  -> implement.sh
+  -> /research-optimize
+  -> optimize.sh
 ```
 
-After that, most ongoing iteration should stay inside `/research-optimize`.
+After the initial setup, most ongoing iteration should happen in the optimization loop. Think of planning as choosing the mountain, implementation as building the gear, and optimization as climbing it without falling into a ravine. 🧗
 
-## Minimal file model
+## Minimal File Model
 
-The system keeps only the core files needed to resume work.
+The whole system is intentionally small. The point is not to save everything. The point is to save the few things the next round truly needs.
 
 ### Planning
 
@@ -88,19 +101,27 @@ The system keeps only the core files needed to resume work.
 - `runtime/RESEARCH_STATE.json`
 - `runtime/MANIFEST.md`
 
-`runtime/RESEARCH_STATE.json` is the lightweight context entrypoint for a fresh AI round. It should summarize only:
-
-- the active phase,
-- the current goal,
-- the current status,
-- the next step,
-- the key files to read next.
-
-### Archive
+### Archives
 
 - `archive/<timestamp>-<slug>/`
+- `archive/implementation/<timestamp>-<slug>/`
+- `archive/optimization/<timestamp>-<slug>/`
 
-## Step by step
+## The Most Important File
+
+`runtime/RESEARCH_STATE.json` is the lightweight entrypoint for a fresh AI round.
+
+It should summarize only:
+
+- active phase
+- current goal
+- current status
+- next step
+- key files to read next
+
+Treat it like a snapshot, not a diary. Overwrite the latest state summary instead of piling history into it. Sharp, current, useful. 🪄
+
+## Step By Step
 
 ### 1. Initialize the workspace
 
@@ -108,181 +129,127 @@ The system keeps only the core files needed to resume work.
 ./scripts/research-bot/init.sh
 ```
 
-This creates the minimal `research/`, `optimization/`, and `runtime/` files if they do not already exist.
-The runtime file is meant to help a fresh agent orient quickly, not to duplicate every artifact in the project.
+This creates the minimal `research/`, `optimization/`, and `runtime/` structure if it does not already exist.
 
-### 2. Create the initial plan
+### 2. Create or refine the plan
 
 ```text
 /research-plan "your research topic"
 ```
 
-This should fill or refine:
+This should create or update:
 
 - `research/plan.md`
 - `research/plan-history.md`
 
-Use `research-plan` mainly at the beginning or when the research problem itself changes.
+Use `research-plan` when you are defining the problem, changing direction, or tightening the scope before code starts flying everywhere.
 
-### 3. Build the first runnable implementation
+### 3. Prepare the first implementation run
 
 ```text
 /research-implement "build the first runnable baseline"
 ```
 
-This should update:
+This should refresh:
 
 - `research/implementation/tasks.json`
 - `research/implementation/progress.md`
-- `research/implementation/CLAUDE.md`
+- `runtime/RESEARCH_STATE.json`
 
-The goal here is to split the current plan into bounded implementation tasks and prepare the implementation loop. By default, `/research-implement` should not start running the whole implementation in the current session.
+Important:
 
-#### Then run the implementation loop
+- `/research-implement` prepares the run
+- `implement.sh` executes the repeated loop
+- `research/implementation/CLAUDE.md` should remain a stable protocol file
+
+Then run the loop:
 
 ```bash
 ./scripts/research-bot/implement.sh 10
 ```
 
-This means: run up to 10 implementation rounds.
+That means: run up to 10 bounded implementation rounds.
 
-What `implement.sh` does:
+`implement.sh` will:
 
-1. Reads `research/implementation/CLAUDE.md`
-2. Sends it to Claude Code
-3. Lets Claude execute one bounded implementation round
-4. Expects Claude to update `tasks.json` and `progress.md`
-5. Repeats until:
-   - Claude returns `<promise>IMPLEMENTATION_COMPLETE</promise>`, or
-   - all tasks in `research/implementation/tasks.json` are complete, or
-   - the max iteration count is reached
+1. Read `research/implementation/CLAUDE.md`
+2. Feed it to Claude Code
+3. Expect updates to `tasks.json` and `progress.md`
+4. Repeat until completion, task exhaustion, or the iteration cap
 
-Important: `implement.sh` is only the loop runner. `research-implement` is responsible for setting the implementation task decomposition and prompt.
-
-In other words:
-
-- `/research-implement`
-  - prepares or refreshes the implementation artifacts
-  - should stop by recommending `./scripts/research-bot/implement.sh <N>`
-  - should not silently execute the whole implementation loop
-- `./scripts/research-bot/implement.sh 10`
-  - runs repeated fresh implementation rounds
-
-Practical rule:
-
-- If `/research-implement` finishes without explicitly recommending the shell command, treat that as incomplete handoff and ask it to produce the runner-ready artifacts plus the exact command to run.
-
-### 4. Start optimization
-
-First run:
+### 4. Prepare the optimization run
 
 ```text
 /research-optimize "improve [metric] under [constraints]"
 ```
 
-This is the skill that should prepare and maintain the optimization run. It owns:
+This should maintain:
 
 - `optimization/prd.json`
 - `optimization/progress.md`
 - `optimization/CLAUDE.md`
+- `runtime/RESEARCH_STATE.json`
 
-Its job is to prepare the loop, not to be the loop.
+Important:
 
-#### What these files mean
+- `/research-optimize` sets the objective and task decomposition
+- `optimize.sh` runs the loop
+- `optimization/CLAUDE.md` should remain the stable per-round protocol
 
-- `optimization/prd.json`
-  - The optimization task decomposition: objective, primary metric, stop condition, baseline, and bounded tasks.
-- `optimization/progress.md`
-  - The append-only history of rounds, changes, evaluations, and decisions.
-- `optimization/CLAUDE.md`
-  - The per-round execution prompt that `optimize.sh` feeds into Claude Code.
-
-#### Then run the loop
+Then run:
 
 ```bash
 ./scripts/research-bot/optimize.sh 10
 ```
 
-This means: run up to 10 optimization rounds.
+That means: run up to 10 optimization rounds.
 
-What `optimize.sh` does:
+`optimize.sh` will:
 
-1. Reads `optimization/CLAUDE.md`
-2. Sends it to Claude Code
-3. Lets Claude execute one bounded optimization round
-4. Expects Claude to update `prd.json` and `progress.md`
-5. Repeats until:
-   - Claude returns `<promise>OPTIMIZATION_COMPLETE</promise>`, or
-   - all tasks in `optimization/prd.json` are complete, or
-   - the max iteration count is reached
+1. Read `optimization/CLAUDE.md`
+2. Feed it to Claude Code
+3. Expect updates to `prd.json` and `progress.md`
+4. Repeat until the objective is complete, tasks are done, or the iteration cap is reached
 
-Important: `optimize.sh` is only the loop runner. It does not invent the strategy. `research-optimize` is responsible for setting the task decomposition and prompt.
+## Archiving Without Drama
 
-In other words:
+When the direction changes enough that the new run is no longer comparable to the current one, archive first.
 
-- `/research-optimize`
-  - prepares or refreshes the optimization artifacts
-  - decides whether to continue the current run or archive and start a new one
-  - should leave the repo ready for the shell runner
-- `./scripts/research-bot/optimize.sh 10`
-  - runs repeated fresh rounds by feeding `optimization/CLAUDE.md` into Claude Code up to 10 times
-
-Practical rule:
-
-- If `/research-optimize` finishes without explicitly recommending the shell command, treat that as incomplete handoff and ask it to produce the runner-ready artifacts plus the exact command to run.
-
-If you installed only the skills but not the scripts, the target project would not have `optimize.sh`. The installer now copies both.
-
-## Archiving runs
-
-When the optimization objective changes materially and the new run is not comparable to the current one, archive the current state first:
+Archive the whole run:
 
 ```bash
 ./scripts/research-bot/archive-run.sh my-topic
 ```
 
-This copies:
+Archive only the implementation state:
 
-- `research/`
-- `optimization/`
-- `runtime/`
-
-into:
-
-```text
-archive/<timestamp>-my-topic/
+```bash
+./scripts/research-bot/archive-implementation.sh implementation-reset
 ```
 
-In this workflow, archiving is mainly part of `research-optimize`, not `research-plan`.
+Archive only the optimization state:
 
-## Recommended usage pattern
+```bash
+./scripts/research-bot/archive-optimization.sh optimization-reset
+```
 
-1. Use `research-plan` once to define the problem and milestones.
-2. Use `research-implement` to create or refresh the implementation run.
-3. Use `implement.sh` to execute repeated implementation rounds until the baseline is ready.
-4. Use `research-optimize` to create or refresh the optimization run.
-5. Use `optimize.sh` to execute repeated optimization rounds.
-6. Stay inside `research-optimize` for ongoing direction changes in the optimization loop.
-7. Archive when the optimization target changes materially.
+This keeps old work recoverable without muddying the current loop. Past-you did the work; future-you deserves to find it. 📦
 
-## What is complete today
+## Good Habits
 
-This repo is complete for a minimal artifact-first workflow:
+- Keep `RESEARCH_STATE.json` short and current
+- Treat files as the memory surface, not the chat transcript
+- Let planning define direction before implementation expands scope
+- Let implementation make things runnable before optimization starts tuning
+- Archive when the goal changes materially instead of pretending two different runs are the same thing
 
-- persistent planning
-- persistent implementation
-- repeated implementation rounds through `implement.sh`
-- persistent optimization
-- runtime index for recovery
-- archive support
-- repeated optimization rounds through `optimize.sh`
-- optional installation into another project's `.claude/skills`
+## Who This Is For
 
-## What is intentionally not included
+This repo is a nice fit if you want:
 
-- remote job orchestration
-- watchdog daemons
-- multi-agent review loops
-- automatic experiment infrastructure
+- a durable AI-assisted research workflow
+- a project that survives context resets
+- repeated implement/evaluate/improve loops
+- a minimal but opinionated structure instead of a giant framework
 
-Those can be added later, but they are intentionally outside the minimal first version.
+If that sounds like your kind of chaos, welcome. 🔬
