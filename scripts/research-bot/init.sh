@@ -89,22 +89,26 @@ write_if_missing "$ROOT_DIR/research/implementation/progress.md" "# Implementati
 write_if_missing "$ROOT_DIR/research/implementation/CLAUDE.md" "# Research Implementer Iteration Instructions
 
 You are one fresh implementation iteration in a Ralph-like loop.
+You are not responsible for starting or orchestrating the outer loop yourself.
 
 ## Read First
 
-1. \`research/plan.md\`
-2. \`research/implementation/tasks.json\`
-3. \`research/implementation/progress.md\`
+1. \`runtime/RESEARCH_STATE.json\` if it exists
+2. \`research/plan.md\`
+3. \`research/implementation/tasks.json\`
+4. \`research/implementation/progress.md\`
 
 ## Your Task
 
-1. Pick the highest-priority task in \`research/implementation/tasks.json\` where \`status\` is not complete.
-2. Implement only one bounded implementation slice.
-3. Run the relevant verification.
-4. Update:
+1. Understand the current goal and status from \`runtime/RESEARCH_STATE.json\` if available.
+2. Pick the highest-priority task in \`research/implementation/tasks.json\` where \`status\` is not complete.
+3. Implement only one bounded implementation slice.
+4. Run the relevant verification.
+5. Update:
    - \`research/implementation/progress.md\`
    - \`research/implementation/tasks.json\`
-5. Preserve important implementation decisions in \`research/implementation/tasks.json\`.
+   - \`runtime/RESEARCH_STATE.json\` if it exists
+6. Preserve important implementation decisions in \`research/implementation/tasks.json\`.
 
 ## Important
 
@@ -113,10 +117,14 @@ You are one fresh implementation iteration in a Ralph-like loop.
 - If the current task is too large for one bounded pass, split it in \`research/implementation/tasks.json\` and complete only the first smaller slice.
 - Record reusable learnings in \`research/implementation/progress.md\` so the next iteration can continue cleanly.
 - If conversational context is missing or stale, trust the files above and continue from them.
+- Do not expand the scope beyond the current implementation goal.
+- Write the next concrete step clearly so the next round can continue without guessing.
+- Do not bootstrap a multi-round workflow from inside this iteration. The outer loop is run by \`./scripts/research-bot/implement.sh <N>\`.
+- Do not rewrite the overall process. Focus on the next bounded implementation slice and the required file updates.
 
 ## Stop Condition
 
-If all relevant tasks are complete, update \`research/implementation/tasks.json\` and reply with:
+If all relevant tasks are complete, update \`research/implementation/tasks.json\` and \`runtime/RESEARCH_STATE.json\` if it exists, then reply with:
 
 \`<promise>IMPLEMENTATION_COMPLETE</promise>\`
 "
@@ -157,24 +165,28 @@ write_if_missing "$ROOT_DIR/optimization/progress.md" "# Optimization Progress
 write_if_missing "$ROOT_DIR/optimization/CLAUDE.md" "# Research Optimizer Iteration Instructions
 
 You are one fresh optimization iteration in a Ralph-like loop.
+You are not responsible for starting or orchestrating the outer loop yourself.
 
 ## Read First
 
-1. \`optimization/prd.json\`
-2. \`optimization/progress.md\`
-3. \`research/plan.md\`
-4. \`research/implementation/tasks.json\`
-5. \`research/implementation/progress.md\`
+1. \`runtime/RESEARCH_STATE.json\` if it exists
+2. \`optimization/prd.json\`
+3. \`optimization/progress.md\`
+4. \`research/plan.md\`
+5. \`research/implementation/tasks.json\`
+6. \`research/implementation/progress.md\`
 
 ## Your Task
 
-1. Pick the highest-priority task in \`optimization/prd.json\` where \`status\` is not complete.
-2. Implement only one bounded improvement attempt.
-3. Run the relevant evaluation.
-4. Update:
+1. Understand the current goal and status from \`runtime/RESEARCH_STATE.json\` if available.
+2. Pick the highest-priority task in \`optimization/prd.json\` where \`status\` is not complete.
+3. Implement only one bounded improvement attempt.
+4. Run the relevant evaluation.
+5. Update:
    - \`optimization/progress.md\`
    - \`optimization/prd.json\`
-5. Preserve the known-best configuration and important decision notes in \`optimization/prd.json\`.
+   - \`runtime/RESEARCH_STATE.json\` if it exists
+6. Preserve the known-best configuration and important decision notes in \`optimization/prd.json\`.
 
 ## Important
 
@@ -182,23 +194,28 @@ You are one fresh optimization iteration in a Ralph-like loop.
 - Treat this as a fresh invocation with no hidden memory beyond the files above.
 - If the current task is too large for one bounded pass, split it in \`optimization/prd.json\` and complete only the first smaller slice.
 - Record reusable learnings in \`optimization/progress.md\` so the next iteration can continue cleanly.
+- Do not bootstrap a multi-round workflow from inside this iteration. The outer loop is run by \`./scripts/research-bot/optimize.sh <N>\`.
+- Do not silently convert this round into a new planning session. Focus on the next bounded optimization slice and the required file updates.
+- Do not broaden the objective mid-run.
+- Write the next concrete step clearly so the next round can continue without guessing.
 
 ## Stop Condition
 
-If all relevant tasks are complete, or the stop condition in \`optimization/prd.json\` says to stop, update \`optimization/prd.json\` and reply with:
+If all relevant tasks are complete, or the stop condition in \`optimization/prd.json\` says to stop, update \`optimization/prd.json\` and \`runtime/RESEARCH_STATE.json\` if it exists, then reply with:
 
 \`<promise>OPTIMIZATION_COMPLETE</promise>\`
 "
 
 write_if_missing "$ROOT_DIR/runtime/RESEARCH_STATE.json" '{
   "active_phase": "planning",
+  "current_goal": "",
+  "current_status": "planning not started",
+  "next_step": "run /research-plan with a concrete research topic",
   "recommended_next_skill": "research-plan",
-  "canonical_files": {
-    "plan": "research/plan.md",
-    "plan_history": "research/plan-history.md",
-    "implementation_tasks": "research/implementation/tasks.json",
-    "optimization_prd": "optimization/prd.json"
-  },
+  "key_files": [
+    "research/plan.md",
+    "research/plan-history.md"
+  ],
   "updated_at": ""
 }'
 
@@ -216,3 +233,6 @@ write_if_missing "$ROOT_DIR/runtime/MANIFEST.md" "# Runtime Manifest
 
 echo "Research bot artifacts initialized."
 echo "Start with research/plan.md, or invoke the research-plan skill."
+echo "When artifacts are ready, run the shell loop explicitly:"
+echo "  ./scripts/research-bot/implement.sh 10"
+echo "  ./scripts/research-bot/optimize.sh 10"

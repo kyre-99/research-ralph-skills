@@ -1,11 +1,12 @@
 {
   "active_phase": "planning",
+  "current_goal": "",
+  "current_status": "planning not started",
+  "next_step": "run /research-plan with a concrete research topic",
   "recommended_next_skill": "research-plan",
-  "canonical_files": {
-    "plan": "research/plan.md",
-    "plan_history": "research/plan-history.md",
-    "implementation_tasks": "research/implementation/tasks.json",
-    "optimization_prd": "optimization/prd.json"
-  },
+  "key_files": [
+    "research/plan.md",
+    "research/plan-history.md"
+  ],
   "updated_at": ""
 }

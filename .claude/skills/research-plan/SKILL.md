@@ -11,6 +11,12 @@ Plan the research direction for: $ARGUMENTS
 
 Read `${CLAUDE_SKILL_DIR}/references/planning-artifacts.md` before updating the planning files.
 
+Start every invocation by reading:
+
+1. `runtime/RESEARCH_STATE.json` if it exists
+2. `research/plan.md` if it exists
+3. `research/plan-history.md` if it exists
+
 ## Purpose
 
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
@@ -46,6 +52,7 @@ Maintain only these files under `research/`:
    - implementation handoff,
    - optimization handoff.
 5. Append a planning entry to `research/plan-history.md`.
+6. Update `runtime/RESEARCH_STATE.json` if it exists with a short summary of the current goal, status, next step, and key files.
 
 ## Output Contract
 
@@ -83,6 +90,7 @@ Each append should include:
 - Treat literature validation as a follow-up task unless it is the immediate focus.
 - The plan should be ready for `/research-implement` and `/research-optimize` without re-planning from scratch.
 - Use `Implementation Handoff` and `Optimization Handoff` to make downstream consumption explicit.
+- Keep `runtime/RESEARCH_STATE.json` lightweight. It should orient the next agent quickly, not duplicate the full plan.
 
 ## Boundaries
 

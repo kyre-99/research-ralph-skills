@@ -12,6 +12,15 @@ Prepare the research optimization run for: $ARGUMENTS
 
 Read `${CLAUDE_SKILL_DIR}/references/optimization-loop.md` before updating optimization artifacts.
 
+Start every invocation by reading in this order:
+
+1. `runtime/RESEARCH_STATE.json` if it exists
+2. `research/plan.md`
+3. `research/implementation/tasks.json` if it exists
+4. `research/implementation/progress.md` if it exists
+5. `optimization/prd.json` if it exists
+6. `optimization/progress.md` if it exists
+
 ## Goal
 
 This skill should behave like the setup phase of a research-oriented Ralph loop with the smallest useful artifact set:
@@ -30,6 +39,7 @@ Its job is to:
 - define or refresh the optimization objective,
 - define or refresh the optimization task decomposition,
 - define or refresh the single-iteration Claude prompt,
+- refresh `runtime/RESEARCH_STATE.json` with a short summary of the current optimization context,
 - decide whether the current run should continue or be archived and replaced,
 - leave the project ready for `./scripts/research-bot/optimize.sh`.
 
@@ -71,24 +81,33 @@ Before the loop starts, ensure `prd.json` defines:
 - priority and completion status for each task.
 
 If any item is missing, infer a reasonable default and write it explicitly.
-If the optimization objective changes materially from the current run, archive the current run before replacing the optimization files. Use `./scripts/research-bot/archive-run.sh <slug>` for this instead of silently overwriting the current state.
+If the optimization objective changes materially from the current run, archive the current run before replacing the optimization files. Use `./scripts/research-bot/archive-optimization.sh "<reason>"` for this instead of silently overwriting the current state.
 Always initialize or refresh `optimization/CLAUDE.md` so it matches the current `prd.json` and `progress.md` before handing control to `./scripts/research-bot/optimize.sh`.
 
 ## Setup Protocol
 
 Each invocation of this skill should do exactly this:
 
-1. Read `research/plan.md` and implementation artifacts if they exist.
-2. Read `optimization/prd.json` and `optimization/progress.md` if they exist.
-3. Decide whether this is:
+1. Read `runtime/RESEARCH_STATE.json` if it exists.
+2. Read `research/plan.md` and implementation artifacts if they exist.
+3. Read `optimization/prd.json` and `optimization/progress.md` if they exist.
+4. Decide whether this is:
    - a refinement of the current optimization run, or
    - a materially new optimization run.
-4. If it is a materially new run:
-   - archive the current run with `./scripts/research-bot/archive-run.sh <slug>`,
+5. If it is a materially new run:
+   - archive the current run with `./scripts/research-bot/archive-optimization.sh "<reason>"`,
    - then rewrite `prd.json`, `progress.md`, and `CLAUDE.md`.
-5. If it is a refinement of the current run:
+6. If it is a refinement of the current run:
    - update `prd.json`, `progress.md`, and `CLAUDE.md` in place.
-6. Leave the repository ready for `./scripts/research-bot/optimize.sh`.
+7. Update `runtime/RESEARCH_STATE.json` with:
+   - `active_phase`
+   - `current_goal`
+   - `current_status`
+   - `next_step`
+   - `recommended_next_skill`
+   - `key_files`
+   - `updated_at`
+8. Leave the repository ready for `./scripts/research-bot/optimize.sh`.
 
 ## Direction Iteration
 
@@ -200,5 +219,6 @@ If the project needs a shell loop, use the template in `${CLAUDE_SKILL_DIR}/asse
 - Stop when gains are noise-level, outside constraints, or clearly misaligned with the user's objective.
 - Prefer small, testable changes over large speculative rewrites.
 - Archive the previous run before starting a new objective that is not comparable to the current one.
-- When archiving is needed, explicitly run `./scripts/research-bot/archive-run.sh <slug>` before resetting optimization state.
+- When archiving is needed, explicitly run `./scripts/research-bot/archive-optimization.sh "<reason>"` before resetting optimization state.
 - Do not silently perform the full optimization loop in the current skill invocation when the user's intent is to prepare a reusable Ralph-like run.
+- Keep `runtime/RESEARCH_STATE.json` brief and operational. It should help the next agent orient quickly, not duplicate the full PRD.

@@ -86,6 +86,14 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 - `runtime/RESEARCH_STATE.json`
 - `runtime/MANIFEST.md`
 
+`runtime/RESEARCH_STATE.json` 是给 fresh AI round 用的轻量上下文入口，只需要概括：
+
+- 当前 phase
+- 当前目标
+- 当前状态
+- 下一步动作
+- 接下来应该读的关键文件
+
 ### Archive
 
 - `archive/<timestamp>-<slug>/`
@@ -99,6 +107,7 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 ```
 
 这会在缺失时创建最小的 `research/`、`optimization/`、`runtime/` 文件集合。
+其中 runtime 文件的目标是帮助新的 agent 快速对齐上下文，而不是重复保存所有细节。
 
 ### 2. 建立初始研究计划
 
@@ -157,6 +166,10 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
 - `./scripts/research-bot/implement.sh 10`
   - 负责执行多轮 fresh implementation rounds
 
+一个实用判断标准：
+
+- 如果 `/research-implement` 结束时没有明确建议你运行哪条 shell 命令，就说明交接还不完整，应该要求它把 runner-ready artifacts 和确切执行命令一起补齐。
+
 ### 4. 进入优化阶段
 
 先运行：
@@ -211,6 +224,10 @@ init.sh -> /research-plan -> /research-implement -> implement.sh -> /research-op
   - 应该把仓库准备到可以交给 shell runner 的状态
 - `./scripts/research-bot/optimize.sh 10`
   - 负责把 `optimization/CLAUDE.md` 交给 Claude Code，最多重复执行 10 轮
+
+一个实用判断标准：
+
+- 如果 `/research-optimize` 结束时没有明确建议你运行哪条 shell 命令，就说明交接还不完整，应该要求它把 runner-ready artifacts 和确切执行命令一起补齐。
 
 如果你之前只安装了 skills，没有把 scripts 一起带过去，那么目标项目里确实不会有 `optimize.sh`。现在安装脚本已经把这点补上了。
 

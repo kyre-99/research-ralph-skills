@@ -88,6 +88,14 @@ The system keeps only the core files needed to resume work.
 - `runtime/RESEARCH_STATE.json`
 - `runtime/MANIFEST.md`
 
+`runtime/RESEARCH_STATE.json` is the lightweight context entrypoint for a fresh AI round. It should summarize only:
+
+- the active phase,
+- the current goal,
+- the current status,
+- the next step,
+- the key files to read next.
+
 ### Archive
 
 - `archive/<timestamp>-<slug>/`
@@ -101,6 +109,7 @@ The system keeps only the core files needed to resume work.
 ```
 
 This creates the minimal `research/`, `optimization/`, and `runtime/` files if they do not already exist.
+The runtime file is meant to help a fresh agent orient quickly, not to duplicate every artifact in the project.
 
 ### 2. Create the initial plan
 
@@ -159,6 +168,10 @@ In other words:
 - `./scripts/research-bot/implement.sh 10`
   - runs repeated fresh implementation rounds
 
+Practical rule:
+
+- If `/research-implement` finishes without explicitly recommending the shell command, treat that as incomplete handoff and ask it to produce the runner-ready artifacts plus the exact command to run.
+
 ### 4. Start optimization
 
 First run:
@@ -213,6 +226,10 @@ In other words:
   - should leave the repo ready for the shell runner
 - `./scripts/research-bot/optimize.sh 10`
   - runs repeated fresh rounds by feeding `optimization/CLAUDE.md` into Claude Code up to 10 times
+
+Practical rule:
+
+- If `/research-optimize` finishes without explicitly recommending the shell command, treat that as incomplete handoff and ask it to produce the runner-ready artifacts plus the exact command to run.
 
 If you installed only the skills but not the scripts, the target project would not have `optimize.sh`. The installer now copies both.
 

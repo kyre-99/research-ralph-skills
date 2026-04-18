@@ -28,7 +28,7 @@ Maintain only:
 1. Check whether `research/`, `research/implementation/`, and `optimization/` have the required artifacts.
 2. Fill gaps with minimal templates instead of rebuilding everything.
 3. Write `runtime/MANIFEST.md` as an index of the current source-of-truth files.
-4. Update `runtime/RESEARCH_STATE.json` with the active phase and current canonical artifacts.
+4. Update `runtime/RESEARCH_STATE.json` with a short summary of the active phase, current goal, current status, next step, recommended next skill, and key files.
 5. When optimization starts a materially new run, preserve the runtime index so the archive and the new run are both recoverable.
 
 ## Canonical Runtime State
@@ -36,11 +36,11 @@ Maintain only:
 `runtime/RESEARCH_STATE.json` should point to:
 
 - active phase,
-- current plan,
-- planning history,
-- implementation tasks,
-- optimization prd,
+- current goal,
+- current status,
+- next step,
 - recommended next skill,
+- key files for the next agent to read,
 - updated timestamp.
 
 ## Recovery Procedure

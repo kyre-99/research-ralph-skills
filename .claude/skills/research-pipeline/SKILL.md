@@ -15,7 +15,7 @@ Coordinate the research workflow for: $ARGUMENTS
 Always start with:
 
 1. `runtime/RESEARCH_STATE.json` if it exists
-2. the canonical phase files listed in the runtime state
+2. the key files listed in the runtime state
 
 If the session is fresh and context is thin, do not infer the current state from memory. Reconstruct it from the files above first.
 

@@ -12,7 +12,7 @@ Implement the research task for: $ARGUMENTS
 
 Read `research/plan.md` and any existing implementation artifacts before making changes.
 
-If this is a fresh session with little or no context, start by reading in this order:
+Start every invocation by reading in this order:
 
 1. `runtime/RESEARCH_STATE.json` if it exists
 2. `research/plan.md`
@@ -37,9 +37,12 @@ Its job is to:
 - refresh `research/implementation/tasks.json`,
 - refresh `research/implementation/progress.md` when the plan changes,
 - refresh `research/implementation/CLAUDE.md`,
+- refresh `runtime/RESEARCH_STATE.json` with a short summary of the current implementation context,
 - leave the repository ready for `./scripts/research-bot/implement.sh`.
 
 Unless the user explicitly asks for a one-off implementation pass in the current session, do not execute queued implementation work directly in this skill.
+
+This skill is also responsible for deciding whether the current implementation run should continue in place or be archived and replaced.
 
 ## Default Behavior
 
@@ -48,6 +51,7 @@ By default, stop after preparing or refreshing:
 - `research/implementation/tasks.json`
 - `research/implementation/progress.md`
 - `research/implementation/CLAUDE.md`
+- `runtime/RESEARCH_STATE.json`
 
 Then recommend the shell runner:
 
@@ -59,12 +63,41 @@ Do not start implementing queued tasks in this skill unless the user explicitly 
 
 ## Setup Protocol
 
-1. Read `research/plan.md`.
-2. Read `research/implementation/tasks.json` and `research/implementation/progress.md` if they exist.
-3. Convert the current implementation handoff into bounded implementation tasks in `research/implementation/tasks.json`.
-4. Refresh `research/implementation/CLAUDE.md` so it matches the current task list and progress log.
-5. Leave the repository ready for `./scripts/research-bot/implement.sh`.
-6. End by explicitly recommending `./scripts/research-bot/implement.sh <N>` as the next step.
+1. Read `runtime/RESEARCH_STATE.json` if it exists.
+2. Read `research/plan.md`.
+3. Read `research/implementation/tasks.json` and `research/implementation/progress.md` if they exist.
+4. Decide whether this is:
+   - a refinement of the current implementation run, or
+   - a materially new implementation run.
+5. If it is a materially new implementation run:
+   - archive the current implementation state with `./scripts/research-bot/archive-implementation.sh "<reason>"`,
+   - then rewrite `research/implementation/tasks.json`, `research/implementation/progress.md`, and `research/implementation/CLAUDE.md`.
+6. If it is a refinement of the current implementation run:
+   - update `research/implementation/tasks.json`, `research/implementation/progress.md`, and `research/implementation/CLAUDE.md` in place.
+7. Update `runtime/RESEARCH_STATE.json` with:
+   - `active_phase`
+   - `current_goal`
+   - `current_status`
+   - `next_step`
+   - `recommended_next_skill`
+   - `key_files`
+   - `updated_at`
+8. Leave the repository ready for `./scripts/research-bot/implement.sh`.
+9. End by explicitly recommending `./scripts/research-bot/implement.sh <N>` as the next step.
+
+Archive only when the current request materially changes the implementation run, such as:
+
+- the implementation objective has clearly changed,
+- the task structure needs a large reset rather than incremental edits,
+- the previous implementation route is being abandoned,
+- continuing in the same files would blur two different implementation runs.
+
+Do not archive for small refinements such as:
+
+- adding one or two tasks,
+- adjusting priorities,
+- clarifying acceptance criteria,
+- updating progress for continued work on the same run.
 
 ## `tasks.json`
 
@@ -125,6 +158,7 @@ This file must be a single-iteration instruction file for a fresh Claude invocat
 - If validation cannot run, state exactly why in `progress.md`.
 - When the baseline becomes runnable, mark the relevant task complete and record the validation result in both `tasks.json` notes and `progress.md`.
 - If session context is thin, trust the files rather than conversational memory.
+- Keep `runtime/RESEARCH_STATE.json` brief and operational. It is a context entrypoint, not a second task database.
 
 ## Boundaries
 
@@ -133,3 +167,4 @@ This file must be a single-iteration instruction file for a fresh Claude invocat
 - Hand off to `/research-optimize` only after `tasks.json` reflects the current implementation status.
 - Do not silently run the full implementation loop in the current skill invocation when the user's intent is to prepare a reusable Ralph-like run.
 - Prefer the shell runner over ad-hoc in-session implementation once the task list has been prepared.
+- When archiving is needed, explicitly run `./scripts/research-bot/archive-implementation.sh "<reason>"` before resetting the implementation files.
