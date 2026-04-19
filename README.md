@@ -1,235 +1,138 @@
-# Research Bot
+# Research Bot 🔬
 
-A file-first research workflow for Claude Code that is a little more stubborn than chat memory, and a lot easier to resume. 🧠⚙️
-
-Instead of hoping the next session remembers everything, this repo keeps the important state on disk: plans, implementation tasks, optimization logs, and runtime handoff files. Close the laptop, lose the context window, come back tomorrow — the workflow still knows where it was. ✨
+**File-first research workflow** — Your AI research project survives context resets. Close the laptop, come back tomorrow, it still knows where it was. 🧠⚡
 
 Chinese version: [README_CN.md](README_CN.md)
 
-## Why This Exists
+---
 
-Most AI workflows feel great right up until the moment the context disappears.
+## ✨ Core Features
 
-This repo is built around a different rule:
-
-- persist the research state in files
-- let each stage leave a clean handoff
-- make every new session able to restart from the repo, not from memory
-
-If you like Ralph-style loops, long-running experiment work, or resumable agent pipelines, this project is very much in that lane. 🚂
-
-## What You Get
-
-- Project skills in `.claude/skills/`
-- Bootstrap script: `scripts/research-bot/init.sh`
-- Implementation loop runner: `scripts/research-bot/implement.sh`
-- Optimization loop runner: `scripts/research-bot/optimize.sh`
-- Full-run archive helper: `scripts/research-bot/archive-run.sh`
-- Implementation archive helper: `scripts/research-bot/archive-implementation.sh`
-- Optimization archive helper: `scripts/research-bot/archive-optimization.sh`
-- Installer for reusing the setup in another repo: `scripts/research-bot/install-skills.sh`
-
-## Two Ways To Use It
-
-### 1. Use it directly in this repo
-
-If you are working inside this repository, Claude Code can use the skills in `.claude/skills/` directly. No installation ceremony required. 🎉
-
-### 2. Install it into another repo
-
-If you want the same workflow somewhere else:
+**🎯 One command, hours of autonomous work**
 
 ```bash
-./scripts/research-bot/install-skills.sh /path/to/target-project
+./scripts/research-bot/implement.sh 10  # Runs 10 implementation rounds autonomously
+./scripts/research-bot/optimize.sh 10   # Runs 10 optimization rounds autonomously
 ```
 
-That copies both:
+Claude works through complex tasks in repeated loops — planning, executing, evaluating, improving — without you babysitting each step.
 
-- skills into `.claude/skills/`
-- helper scripts into `scripts/research-bot/`
+**🚀 From idea → working project → optimized solution**
 
-Result:
+| Phase | What happens |
+|-------|--------------|
+| `/research-plan` | Turn vague idea into structured plan |
+| `/research-implement` + `implement.sh` | Build working baseline, iterate until solid |
+| `/research-optimize` + `optimize.sh` | Tune metrics under constraints |
 
-```text
-/path/to/target-project/.claude/skills/
-/path/to/target-project/scripts/research-bot/
-```
+One workflow, end-to-end. No jumping between tools.
 
-If you are already inside the target repo:
+**🔄 Files survive context resets**
+
+Close your laptop mid-run. Open a fresh session tomorrow. Say `/research-pipeline continue`. It picks up exactly where you left off — because all state lives in files, not chat memory.
+
+---
+
+## 🚀 Two Ways to Use
+
+### Option 1: Use directly in this repo
+
+Claude Code reads `.claude/skills/` directly. No installation needed. 🎉
+
+### Option 2: Install into another project
 
 ```bash
-cd /path/to/target-project
-/path/to/reasearch-bot/scripts/research-bot/install-skills.sh
+./scripts/research-bot/install-skills.sh /path/to/your-project
 ```
 
-## Main Usage
+Creates:
+- `.claude/skills/` — skill definitions
+- `scripts/research-bot/` — helper scripts
 
-```text
-New project:
-  init.sh
-  -> /research-plan
-  -> /research-implement
-  -> implement.sh
-  -> /research-optimize
-  -> optimize.sh
+---
 
-Resume an existing project:
-  /research-pipeline
+## 📋 Three Key Patterns
 
-Start a materially new direction:
-  archive current run
-  -> /research-plan
-```
-
-Most of the time, you only need these three entry patterns:
-
-### 1. Start a new project
+### 🆕 Start new project
 
 ```bash
 ./scripts/research-bot/init.sh
 ```
 
-```text
-/research-plan "your research topic"
-/research-implement "build the first runnable baseline"
+```
+/research-plan “your topic”
+/research-implement “build first runnable baseline”
 ./scripts/research-bot/implement.sh 10
-/research-optimize "improve [metric] under [constraints]"
+/research-optimize “improve [metric] under [constraints]”
 ./scripts/research-bot/optimize.sh 10
 ```
 
-### 2. Resume in a fresh session
+### 🔄 Resume existing work (recommended)
 
-```text
-/research-pipeline continue the current research run
+Fresh session? Just say:
+
+```
+/research-pipeline continue the current research
 ```
 
-### 3. Start a new direction
+It reads `RESEARCH_STATE.json`, detects current phase, routes to the right next step. 🧭
+
+### 🔀 Switch to new direction
+
+When research direction changes materially:
 
 ```bash
-./scripts/research-bot/archive-run.sh my-topic
+./scripts/research-bot/archive-run.sh new-topic
+/research-plan “the new direction”
 ```
 
-```text
-/research-plan "the new research direction"
+---
+
+## 🗂️ File Structure
+
+```
+research/
+├── plan.md, plan-history.md          # Planning phase
+├── implementation/
+│   └── tasks.json, progress.md       # Implementation phase
+├── optimization/
+│   └── prd.json, progress.md         # Optimization phase
+
+runtime/
+├── RESEARCH_STATE.json               # 🔑 Entry point for fresh session
+├── MANIFEST.md
+
+archive/                              # Historical runs
 ```
 
-## What `research-pipeline` Actually Does
+---
 
-`/research-pipeline` is the resume-and-route entrypoint for a fresh session.
+## 💡 Best Practices
 
-Use it when you do not want to manually decide which skill should run next.
+- 📝 Keep `RESEARCH_STATE.json` short and current
+- 🧠 Treat files as memory, not chat history
+- 🎯 Plan first, then implement, then optimize
+- 📦 Archive when direction changes
 
-It will:
+---
 
-- read `runtime/RESEARCH_STATE.json` first
-- inspect the key files listed there
-- figure out whether the project should continue planning, implementation, optimization, or runtime repair
-- route the workflow to the right stage instead of restarting from scratch
+## 🎯 Who This Is For
 
-In plain English: if you open a brand new session and ask “please continue the current work,” `research-pipeline` is the right first move. 🧭
+- Long-running AI-assisted research projects
+- Projects that need to survive context resets
+- Implement → Evaluate → Improve loop workflows
+- Researchers who prefer lean structure over big frameworks
 
-Recommended prompt:
+---
 
-```text
-/research-pipeline continue the current research run
-```
+## 🛠️ Quick Reference
 
-ℹ️ If `runtime/RESEARCH_STATE.json` is current, this gives the new session a reliable file-based handoff instead of depending on chat memory.
-
-## Minimal File Model
-
-The whole system is intentionally small. The point is not to save everything. The point is to save the few things the next round truly needs.
-
-### Planning
-
-- `research/plan.md`
-- `research/plan-history.md`
-
-### Implementation
-
-- `research/implementation/tasks.json`
-- `research/implementation/progress.md`
-- `research/implementation/CLAUDE.md`
-
-### Optimization
-
-- `optimization/prd.json`
-- `optimization/progress.md`
-- `optimization/CLAUDE.md`
-
-### Runtime
-
-- `runtime/RESEARCH_STATE.json`
-- `runtime/MANIFEST.md`
-
-### Archives
-
-- `archive/<timestamp>-<slug>/`
-- `archive/implementation/<timestamp>-<slug>/`
-- `archive/optimization/<timestamp>-<slug>/`
-
-## The Most Important File
-
-`runtime/RESEARCH_STATE.json` is the lightweight entrypoint for a fresh AI round.
-
-It should summarize only:
-
-- active phase
-- current goal
-- current status
-- next step
-- key files to read next
-
-Treat it like a snapshot, not a diary. Overwrite the latest state summary instead of piling history into it. Sharp, current, useful. 🪄
-
-## Quick Notes
-
-- `/research-plan` defines the research direction
-- `/research-implement` prepares implementation artifacts
-- `./scripts/research-bot/implement.sh 10` runs repeated implementation rounds
-- `/research-optimize` prepares optimization artifacts
-- `./scripts/research-bot/optimize.sh 10` runs repeated optimization rounds
-- `/research-pipeline` is the best way to resume in a new session
-
-## Archiving Without Drama
-
-When the direction changes enough that the new run is no longer comparable to the current one, archive first.
-
-Archive the whole run:
-
-```bash
-./scripts/research-bot/archive-run.sh my-topic
-```
-
-Archive only the implementation state:
-
-```bash
-./scripts/research-bot/archive-implementation.sh implementation-reset
-```
-
-Archive only the optimization state:
-
-```bash
-./scripts/research-bot/archive-optimization.sh optimization-reset
-```
-
-This keeps old work recoverable without muddying the current loop. 📦
-
-## Good Habits
-
-- Keep `RESEARCH_STATE.json` short and current
-- Treat files as the memory surface, not the chat transcript
-- Let planning define direction before implementation expands scope
-- Let implementation make things runnable before optimization starts tuning
-- Archive when the goal changes materially instead of pretending two different runs are the same thing
-
-## Who This Is For
-
-This repo is a nice fit if you want:
-
-- a durable AI-assisted research workflow
-- a project that survives context resets
-- repeated implement/evaluate/improve loops
-- a minimal but opinionated structure instead of a giant framework
-
-If that sounds like your kind of chaos, welcome. 🔬
+| Command | Purpose |
+|---------|---------|
+| `/research-plan` | Define research direction |
+| `/research-implement` | Prepare implementation phase |
+| `/research-optimize` | Prepare optimization phase |
+| `/research-pipeline` | 🌟 Fresh session entry point |
+| `implement.sh N` | Run N implementation rounds |
+| `optimize.sh N` | Run N optimization rounds |
+| `archive-run.sh` | Archive entire run |
