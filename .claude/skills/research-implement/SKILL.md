@@ -155,8 +155,7 @@ It should explain:
 - what kind of bounded work to do,
 - what files must be updated,
 - what stop condition to use.
-
-Do not rewrite this file for normal run preparation. Treat it as fixed runner guidance unless you are intentionally changing the workflow protocol itself.
+- Emphasize the scope of implementation and avoid implementing all tasks at once. It is best to execute only one task with a pending status. And then update the task status to complete.
 
 ## Rules
 

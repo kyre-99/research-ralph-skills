@@ -61,7 +61,9 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
         cat "$PROMPT_FILE"
         echo ""
         echo "----- END CLAUDE.md -----"
-      } | claude --dangerously-skip-permissions --print
+        echo "Only implement one task per one pending task per iteration. When it is complete, mark it as complete in the task file. "
+        echo "If all pending tasks are complete,  echo <promise>IMPLEMENTATION_COMPLETE</promise> to stop the loop."
+             } | claude --dangerously-skip-permissions --print
     ) 2>&1 | tee /dev/stderr
   ) || true
 
